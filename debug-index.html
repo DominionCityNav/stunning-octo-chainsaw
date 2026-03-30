@@ -1,0 +1,2812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#1a0a2e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" id="apple-title" content="DCC">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152.png">
+<link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
+<title id="page-title">Dominion City Church</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Nunito:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+/* ═══════════════════════════════════════════════════
+   CONFIG BLOCK — EDIT ONLY HERE
+═══════════════════════════════════════════════════ */
+:root {
+  /* Identity */
+  --church-name: "Dominion City Church";
+  --pastor-name: "Pastor Shan E. Davis";
+  --church-address: "625 Blackshear St, Navasota, TX 77868";
+  --church-phone: "936-320-1852";
+  --church-email: "info@dominioncity.net";
+  --service-time: "Sunday 9:00 AM";
+
+  /* Giving */
+  --square-url: "https://checkout.square.site/merchant/MLM37VA9CDQG6/checkout/FXSTTO7TGCBG52XBCHWB4VMX?src=sms";
+  --zelle-id: "admin@dominioncity.net";
+  --cashapp-id: "$DCCNAVASOTA";
+
+  /* Supabase */
+  --supabase-url: "https://dmjdkowpskvrcjrxlcud.supabase.co";
+  --supabase-key: "sb_publishable_rflFSxTH9UorqyXPe6AVOA_r43hOw-D";
+
+  /* Brand Colors */
+  --purple-deep: #1a0a2e;
+  --purple-mid: #2d1054;
+  --purple-light: #4a1e8a;
+  --purple-bright: #6b35b8;
+  --gold: #c9952a;
+  --gold-light: #e8b84b;
+  --gold-pale: #f5e4b8;
+  --white: #ffffff;
+  --off-white: #f8f5ff;
+  --text-muted: #9b8ab8;
+  --card-bg: rgba(255,255,255,0.06);
+  --card-border: rgba(201,149,42,0.3);
+  --ministry-border: rgba(201,149,42,0.2);
+
+  /* Typography */
+  --font-display: 'Cinzel', serif;
+  --font-body: 'Nunito', sans-serif;
+  --transition: 0.3s cubic-bezier(0.4,0,0.2,1);
+  --radius: 16px;
+  --radius-sm: 10px;
+}
+
+/* ═══════════════════════════════════════════════════
+   RESET
+═══════════════════════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{height:100%;overscroll-behavior:none}
+body{font-family:var(--font-body);background:var(--purple-deep);color:var(--white);min-height:100vh;overflow:hidden}
+button{cursor:pointer;border:none;background:none;font-family:inherit;color:inherit}
+a{text-decoration:none;color:inherit}
+input,textarea,select{font-family:inherit}
+
+/* ═══════════════════════════════════════════════════
+   SPLASH
+═══════════════════════════════════════════════════ */
+#splash{
+  position:fixed;inset:0;z-index:9999;
+  background:var(--purple-deep);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;
+  transition:opacity 0.6s ease;
+}
+#splash.out{opacity:0;pointer-events:none}
+.splash-logo-wrap{position:relative;width:100px;height:100px}
+.splash-ring{
+  position:absolute;inset:0;border-radius:50%;
+  border:2px solid transparent;
+  border-top-color:var(--gold);border-right-color:var(--gold-light);
+  animation:spin 2s linear infinite;
+}
+.splash-inner{
+  position:absolute;inset:8px;border-radius:50%;
+  background:var(--purple-mid);
+  display:flex;align-items:center;justify-content:center;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.splash-title{font-family:var(--font-display);font-size:22px;letter-spacing:3px;color:var(--gold-light);text-align:center}
+.splash-sub{font-size:11px;letter-spacing:4px;text-transform:uppercase;color:var(--text-muted)}
+.splash-bar{width:200px;height:2px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden;margin-top:8px}
+.splash-fill{height:100%;width:0;background:linear-gradient(90deg,var(--gold),var(--gold-light));animation:fill-bar 2s ease forwards}
+@keyframes fill-bar{to{width:100%}}
+
+/* ═══════════════════════════════════════════════════
+   APP SHELL
+═══════════════════════════════════════════════════ */
+#app{display:none;flex-direction:column;height:100vh;overflow:hidden}
+#app.on{display:flex}
+
+/* ═══════════════════════════════════════════════════
+   TOP NAV
+═══════════════════════════════════════════════════ */
+.top-nav{
+  flex-shrink:0;
+  background:rgba(26,10,46,0.97);
+  backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--card-border);
+  padding:0 16px;height:58px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:relative;z-index:50;
+}
+.nav-brand{display:flex;align-items:center;gap:10px}
+.nav-logo{width:34px;height:34px}
+.nav-name-block .nav-church{font-family:var(--font-display);font-size:13px;letter-spacing:1.5px;color:var(--gold-light);line-height:1.2}
+.nav-name-block .nav-loc{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted)}
+.nav-right{display:flex;align-items:center;gap:10px}
+.notif-btn{position:relative;width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:50%;border:1px solid rgba(201,149,42,0.25)}
+.notif-badge{
+  position:absolute;top:4px;right:4px;
+  width:16px;height:16px;border-radius:50%;
+  background:var(--gold);color:var(--purple-deep);
+  font-size:9px;font-weight:700;
+  display:none;align-items:center;justify-content:center;
+}
+.notif-badge.show{display:flex}
+.service-pill{
+  font-size:10px;letter-spacing:1px;color:var(--gold);
+  border:1px solid rgba(201,149,42,0.4);
+  padding:4px 10px;border-radius:20px;
+  display:flex;align-items:center;gap:5px;
+}
+.pulse{width:6px;height:6px;border-radius:50%;background:var(--gold);animation:blink 1.4s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+
+/* ═══════════════════════════════════════════════════
+   CONTENT AREA
+═══════════════════════════════════════════════════ */
+.content-wrap{flex:1;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;-webkit-overflow-scrolling:touch}
+.screen{display:none;padding:16px 16px 90px;animation:fadeUp 0.35s ease}
+.screen.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+/* ═══════════════════════════════════════════════════
+   BOTTOM NAV — 5 TABS
+═══════════════════════════════════════════════════ */
+.bottom-nav{
+  flex-shrink:0;
+  background:rgba(26,10,46,0.98);
+  backdrop-filter:blur(16px);
+  border-top:1px solid var(--card-border);
+  display:flex;
+  padding-bottom:env(safe-area-inset-bottom,0);
+  position:relative;z-index:50;
+}
+.tab{
+  flex:1;display:flex;flex-direction:column;align-items:center;
+  padding:10px 4px 8px;gap:3px;
+  color:var(--text-muted);
+  transition:var(--transition);
+}
+.tab.active{color:var(--gold-light)}
+.tab:hover{color:var(--gold)}
+.tab-icon{font-size:20px;line-height:1;transition:transform 0.2s}
+.tab.active .tab-icon{transform:translateY(-2px)}
+.tab-label{font-size:9px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase}
+.tab-notif{
+  position:absolute;top:8px;right:calc(50% - 14px);
+  width:8px;height:8px;border-radius:50%;
+  background:var(--gold);
+  display:none;
+}
+.tab-notif.show{display:block}
+
+/* ═══════════════════════════════════════════════════
+   REUSABLE COMPONENTS
+═══════════════════════════════════════════════════ */
+.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.section-title{
+  font-family:var(--font-display);font-size:13px;letter-spacing:1.5px;
+  color:var(--gold-light);display:flex;align-items:center;gap:8px;
+}
+.section-title::before{content:'';display:block;width:18px;height:2px;background:var(--gold);border-radius:2px}
+.section-more{font-size:11px;color:var(--text-muted);cursor:pointer}
+.section-more:hover{color:var(--gold)}
+
+.card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:var(--radius);padding:16px;margin-bottom:14px;transition:var(--transition)}
+.card:hover{border-color:rgba(201,149,42,0.5)}
+.card-title{font-family:var(--font-display);font-size:13px;letter-spacing:1px;color:var(--gold-light);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.card-icon{width:28px;height:28px;border-radius:8px;background:rgba(201,149,42,0.15);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+
+.gold-divider{height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:16px 0;opacity:0.3}
+
+.btn-gold{background:var(--gold);color:var(--purple-deep);font-family:var(--font-display);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:11px 20px;border-radius:8px;transition:var(--transition);display:inline-block;text-align:center}
+.btn-gold:hover{background:var(--gold-light);transform:translateY(-1px)}
+.btn-outline{border:1px solid rgba(201,149,42,0.5);color:var(--gold-light);font-family:var(--font-display);font-size:11px;letter-spacing:1.5px;text-transform:uppercase;padding:11px 20px;border-radius:8px;transition:var(--transition);display:inline-block;text-align:center}
+.btn-outline:hover{background:rgba(201,149,42,0.1);border-color:var(--gold)}
+.btn-full{width:100%;display:block}
+
+.form-group{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+.form-label{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-muted)}
+.form-input{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:var(--white);font-family:var(--font-body);font-size:14px;padding:11px 14px;outline:none;transition:var(--transition)}
+.form-input:focus{border-color:var(--gold)}
+.form-input::placeholder{color:rgba(255,255,255,0.25)}
+textarea.form-input{resize:vertical;min-height:80px}
+select.form-input{appearance:none;cursor:pointer}
+select.form-input option{background:var(--purple-mid)}
+
+.toast{display:none;background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.4);border-radius:var(--radius-sm);padding:14px;color:#86efac;font-size:14px;text-align:center;margin-top:10px;animation:fadeUp 0.4s ease}
+.toast.show{display:block}
+.toast.error{background:rgba(239,68,68,0.15);border-color:rgba(239,68,68,0.4);color:#fca5a5}
+
+/* ═══════════════════════════════════════════════════
+   AUTH SCREEN
+═══════════════════════════════════════════════════ */
+#auth-screen{
+  position:fixed;inset:0;z-index:200;
+  background:var(--purple-deep);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:24px;
+}
+#auth-screen.hidden{display:none}
+.auth-logo{margin-bottom:24px}
+.auth-title{font-family:var(--font-display);font-size:20px;letter-spacing:2px;color:var(--gold-light);text-align:center;margin-bottom:6px}
+.auth-sub{font-size:13px;color:var(--text-muted);text-align:center;margin-bottom:32px}
+.pin-dots{display:flex;gap:14px;justify-content:center;margin-bottom:24px}
+.pin-dot{width:14px;height:14px;border-radius:50%;border:2px solid rgba(201,149,42,0.4);transition:var(--transition)}
+.pin-dot.filled{background:var(--gold);border-color:var(--gold)}
+.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%;max-width:280px;margin-bottom:16px}
+.pin-key{
+  aspect-ratio:1;border-radius:50%;
+  border:1px solid rgba(201,149,42,0.25);
+  font-size:22px;font-weight:600;
+  color:var(--white);
+  display:flex;align-items:center;justify-content:center;
+  transition:var(--transition);background:rgba(255,255,255,0.04);
+}
+.pin-key:hover,.pin-key:active{background:rgba(201,149,42,0.15);border-color:var(--gold)}
+.pin-key.del{font-size:18px;color:var(--text-muted)}
+.pin-key.zero{grid-column:2}
+.auth-bio-btn{
+  display:flex;align-items:center;gap:8px;
+  font-size:13px;color:var(--gold);
+  border:1px solid rgba(201,149,42,0.3);
+  padding:10px 20px;border-radius:20px;
+  margin-bottom:16px;
+  transition:var(--transition);
+}
+.auth-bio-btn:hover{background:rgba(201,149,42,0.1)}
+.auth-bio-btn.hidden{display:none}
+.auth-skip{font-size:12px;color:var(--text-muted);cursor:pointer;margin-top:8px}
+.auth-skip:hover{color:var(--gold)}
+.auth-error{font-size:12px;color:#fca5a5;text-align:center;min-height:18px;margin-bottom:8px}
+
+/* ═══════════════════════════════════════════════════
+   PROFILE GATE BANNER
+═══════════════════════════════════════════════════ */
+.profile-gate-banner{
+  background:linear-gradient(135deg,rgba(201,149,42,0.15),rgba(107,53,184,0.15));
+  border:1px solid rgba(201,149,42,0.4);
+  border-radius:var(--radius-sm);
+  padding:14px;margin-bottom:16px;
+  display:flex;align-items:center;gap:12px;
+}
+.gate-icon{font-size:24px;flex-shrink:0}
+.gate-text{flex:1}
+.gate-text strong{display:block;font-size:13px;color:var(--gold-light);margin-bottom:3px}
+.gate-text span{font-size:12px;color:var(--text-muted)}
+.gate-btn{font-size:11px;font-weight:700;color:var(--purple-deep);background:var(--gold);padding:7px 14px;border-radius:6px;white-space:nowrap;flex-shrink:0}
+
+/* ═══════════════════════════════════════════════════
+   HERO
+═══════════════════════════════════════════════════ */
+.hero{
+  border-radius:var(--radius);overflow:hidden;position:relative;
+  min-height:200px;margin-bottom:16px;
+  background:var(--purple-mid);border:1px solid var(--card-border);
+}
+.hero-bg{position:absolute;inset:0;background:linear-gradient(135deg,var(--purple-deep) 0%,var(--purple-light) 60%,rgba(201,149,42,0.2) 100%)}
+.hero-pattern{position:absolute;inset:0;opacity:0.04;background-image:repeating-linear-gradient(45deg,var(--gold) 0px,var(--gold) 1px,transparent 1px,transparent 18px)}
+.hero-content{position:relative;z-index:2;padding:24px 20px 20px}
+.hero-eyebrow{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:8px}
+.hero-title{font-family:var(--font-display);font-size:26px;line-height:1.2;color:var(--white);margin-bottom:8px}
+.hero-title span{color:var(--gold-light)}
+.hero-scripture{font-size:12px;font-style:italic;color:var(--text-muted);line-height:1.6;border-left:2px solid var(--gold);padding-left:10px;margin-bottom:18px}
+.hero-btns{display:flex;gap:10px;flex-wrap:wrap}
+
+/* ═══════════════════════════════════════════════════
+   INFO TILES
+═══════════════════════════════════════════════════ */
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.info-tile{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-sm);padding:12px 14px}
+.info-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);margin-bottom:3px}
+.info-value{font-size:14px;font-weight:600;color:var(--white)}
+.info-sub{font-size:11px;color:var(--gold)}
+
+/* ═══════════════════════════════════════════════════
+   SCRIPTURE CARD
+═══════════════════════════════════════════════════ */
+.scripture-card{
+  background:linear-gradient(135deg,rgba(107,53,184,0.3),rgba(201,149,42,0.1));
+  border:1px solid rgba(201,149,42,0.35);
+  border-radius:var(--radius);padding:20px;margin-bottom:14px;
+  text-align:center;
+}
+.scripture-date{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:10px}
+.scripture-verse{font-size:15px;font-style:italic;line-height:1.8;color:rgba(255,255,255,0.9);margin-bottom:10px}
+.scripture-ref{font-family:var(--font-display);font-size:12px;color:var(--gold-light);letter-spacing:1px}
+
+/* ═══════════════════════════════════════════════════
+   MINISTRY ROOMS GRID
+═══════════════════════════════════════════════════ */
+.ministry-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.ministry-room-btn{
+  background:rgba(255,255,255,0.04);
+  border:1px solid var(--ministry-border);
+  border-radius:var(--radius-sm);
+  padding:16px 12px;
+  text-align:center;
+  transition:var(--transition);
+  position:relative;
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+}
+.ministry-room-btn:hover{border-color:var(--gold);background:rgba(201,149,42,0.08)}
+.ministry-room-btn.locked{opacity:0.25;pointer-events:none}
+.ministry-room-btn.has-notif::after{content:'';position:absolute;top:8px;right:8px;width:8px;height:8px;border-radius:50%;background:var(--gold)}
+.room-icon{font-size:26px}
+.room-name{font-size:12px;font-weight:700;color:var(--white);letter-spacing:0.5px;line-height:1.3}
+.room-badge{font-size:9px;color:var(--gold);letter-spacing:1px;text-transform:uppercase}
+
+/* ═══════════════════════════════════════════════════
+   MINISTRY ROOM DETAIL
+═══════════════════════════════════════════════════ */
+#ministry-detail{display:none}
+#ministry-detail.active{display:block}
+.room-header{
+  display:flex;align-items:center;gap:14px;
+  padding:16px;
+  background:rgba(255,255,255,0.04);
+  border:1px solid var(--card-border);
+  border-radius:var(--radius);
+  margin-bottom:14px;
+}
+.room-back{font-size:22px;cursor:pointer;color:var(--gold)}
+.room-header-info .room-header-name{font-family:var(--font-display);font-size:16px;color:var(--white)}
+.room-header-info .room-header-sub{font-size:11px;color:var(--text-muted)}
+.room-tabs{display:flex;gap:6px;margin-bottom:16px;overflow-x:auto;padding-bottom:4px}
+.room-tab{font-size:11px;font-weight:700;padding:7px 16px;border-radius:20px;border:1px solid rgba(255,255,255,0.12);color:var(--text-muted);white-space:nowrap;transition:var(--transition)}
+.room-tab.active{background:var(--gold);color:var(--purple-deep);border-color:var(--gold)}
+
+/* Chat */
+.chat-wrap{display:flex;flex-direction:column;gap:10px;margin-bottom:14px;min-height:200px}
+.chat-msg{display:flex;gap:10px;animation:fadeUp 0.3s ease}
+.chat-msg.own{flex-direction:row-reverse}
+.chat-avatar{width:34px;height:34px;border-radius:50%;background:var(--purple-light);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;color:var(--gold-light)}
+.chat-bubble{max-width:75%;background:rgba(255,255,255,0.08);border-radius:12px;padding:10px 12px;font-size:13px;line-height:1.5}
+.chat-msg.own .chat-bubble{background:rgba(201,149,42,0.2);border:1px solid rgba(201,149,42,0.3)}
+.chat-name{font-size:10px;color:var(--text-muted);margin-bottom:3px}
+.chat-time{font-size:10px;color:var(--text-muted);text-align:right;margin-top:4px}
+.chat-input-row{display:flex;gap:8px}
+.chat-input{flex:1;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:20px;color:var(--white);font-size:13px;padding:10px 16px;outline:none}
+.chat-input:focus{border-color:var(--gold)}
+.chat-send{background:var(--gold);color:var(--purple-deep);width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+
+/* QOTW */
+.qotw-card{background:linear-gradient(135deg,rgba(107,53,184,0.25),rgba(201,149,42,0.1));border:1px solid rgba(201,149,42,0.3);border-radius:var(--radius);padding:18px;margin-bottom:14px}
+.qotw-label{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:8px}
+.qotw-question{font-size:15px;font-style:italic;line-height:1.7;color:rgba(255,255,255,0.9)}
+
+/* ═══════════════════════════════════════════════════
+   PRAYER WALL
+═══════════════════════════════════════════════════ */
+.prayer-type-toggle{display:flex;gap:8px;margin-bottom:16px}
+.prayer-toggle-btn{flex:1;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);font-size:13px;font-weight:600;color:var(--text-muted);transition:var(--transition)}
+.prayer-toggle-btn.active{background:var(--gold);color:var(--purple-deep);border-color:var(--gold)}
+.prayer-item{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-sm);padding:14px;margin-bottom:10px;transition:var(--transition)}
+.prayer-item:hover{border-color:var(--card-border)}
+.prayer-meta{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.prayer-name{font-size:12px;font-weight:700;color:var(--gold-light)}
+.prayer-time{font-size:11px;color:var(--text-muted)}
+.prayer-text{font-size:14px;line-height:1.6;color:rgba(255,255,255,0.85);margin-bottom:10px}
+.prayer-actions{display:flex;gap:8px}
+.pray-btn{font-size:11px;color:var(--text-muted);border:1px solid rgba(255,255,255,0.1);padding:5px 12px;border-radius:20px;transition:var(--transition)}
+.pray-btn:hover,.pray-btn.prayed{color:var(--gold);border-color:rgba(201,149,42,0.4)}
+.pray-count{font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:4px}
+.private-badge{font-size:9px;letter-spacing:1px;text-transform:uppercase;background:rgba(239,68,68,0.15);color:#fca5a5;border:1px solid rgba(239,68,68,0.3);padding:2px 8px;border-radius:10px}
+
+/* ═══════════════════════════════════════════════════
+   ANNOUNCEMENTS
+═══════════════════════════════════════════════════ */
+.announcement-item{background:var(--card-bg);border:1px solid var(--card-border);border-radius:var(--radius);overflow:hidden;margin-bottom:14px}
+.ann-image{width:100%;height:160px;object-fit:cover;display:block}
+.ann-content{padding:16px}
+.ann-date{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:6px}
+.ann-title{font-family:var(--font-display);font-size:16px;color:var(--white);margin-bottom:8px}
+.ann-body{font-size:14px;line-height:1.7;color:rgba(255,255,255,0.8)}
+.ann-yt-link{display:flex;align-items:center;gap:8px;margin-top:12px;padding:10px 14px;background:rgba(255,0,0,0.1);border:1px solid rgba(255,80,80,0.3);border-radius:8px;color:#ff9999;font-size:13px;font-weight:600}
+
+/* ═══════════════════════════════════════════════════
+   CALENDAR
+═══════════════════════════════════════════════════ */
+.calendar-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.cal-nav{width:36px;height:36px;border-radius:50%;border:1px solid rgba(201,149,42,0.3);display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--gold);cursor:pointer}
+.cal-month{font-family:var(--font-display);font-size:16px;letter-spacing:1px;color:var(--gold-light)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:16px}
+.cal-day-label{font-size:10px;text-align:center;color:var(--text-muted);font-weight:700;padding:6px 0;letter-spacing:1px}
+.cal-day{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:13px;cursor:pointer;transition:var(--transition);position:relative}
+.cal-day:hover{background:rgba(201,149,42,0.15)}
+.cal-day.today{background:var(--gold);color:var(--purple-deep);font-weight:700}
+.cal-day.has-event::after{content:'';position:absolute;bottom:3px;width:4px;height:4px;border-radius:50%;background:var(--gold-light)}
+.cal-day.today.has-event::after{background:var(--purple-deep)}
+.cal-day.other-month{color:rgba(255,255,255,0.2)}
+.event-list-item{display:flex;gap:14px;align-items:flex-start;padding:14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-sm);margin-bottom:10px}
+.event-date-box{min-width:46px;text-align:center;background:rgba(201,149,42,0.15);border:1px solid rgba(201,149,42,0.3);border-radius:8px;padding:6px 4px}
+.ev-month{font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--gold)}
+.ev-day{font-size:22px;font-weight:700;color:var(--white);line-height:1.1}
+.event-info-title{font-size:14px;font-weight:600;color:var(--white);margin-bottom:3px}
+.event-info-detail{font-size:12px;color:var(--text-muted);margin-bottom:8px}
+.remind-btn{font-size:11px;color:var(--gold);border:1px solid rgba(201,149,42,0.3);padding:5px 12px;border-radius:20px;transition:var(--transition)}
+.remind-btn:hover,.remind-btn.set{background:rgba(201,149,42,0.15)}
+
+/* ═══════════════════════════════════════════════════
+   COMMUNITY FEED
+═══════════════════════════════════════════════════ */
+.feed-post{background:var(--card-bg);border:1px solid var(--card-border);border-radius:var(--radius);overflow:hidden;margin-bottom:14px}
+.feed-post-header{display:flex;align-items:center;gap:12px;padding:14px 14px 0}
+.feed-avatar{width:40px;height:40px;border-radius:50%;background:var(--purple-light);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:14px;color:var(--gold-light);flex-shrink:0}
+.feed-poster-name{font-size:14px;font-weight:600;color:var(--white)}
+.feed-post-time{font-size:11px;color:var(--text-muted)}
+.feed-post-content{padding:12px 14px;font-size:14px;line-height:1.7;color:rgba(255,255,255,0.85)}
+.feed-post-media{width:100%;max-height:280px;object-fit:cover;display:block}
+.feed-post-actions{display:flex;gap:0;border-top:1px solid rgba(255,255,255,0.06)}
+.feed-action-btn{flex:1;padding:12px;display:flex;align-items:center;justify-content:center;gap:6px;font-size:13px;color:var(--text-muted);transition:var(--transition)}
+.feed-action-btn:hover{color:var(--gold);background:rgba(201,149,42,0.06)}
+.feed-action-btn.liked{color:var(--gold)}
+.feed-compose{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:var(--radius);padding:14px;margin-bottom:14px}
+.compose-row{display:flex;gap:10px;align-items:center;margin-bottom:10px}
+.compose-input{flex:1;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:20px;color:var(--white);font-size:13px;padding:10px 14px;outline:none}
+.compose-input::placeholder{color:var(--text-muted)}
+.compose-actions{display:flex;gap:8px}
+.compose-type-btn{font-size:11px;color:var(--text-muted);border:1px solid rgba(255,255,255,0.1);padding:6px 12px;border-radius:20px;transition:var(--transition)}
+.compose-type-btn:hover,.compose-type-btn.active{color:var(--gold);border-color:rgba(201,149,42,0.3)}
+
+/* ═══════════════════════════════════════════════════
+   GIVING
+═══════════════════════════════════════════════════ */
+.giving-option{
+  display:flex;align-items:center;gap:16px;
+  padding:18px;background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.08);
+  border-radius:var(--radius-sm);margin-bottom:10px;
+  transition:var(--transition);
+}
+.giving-option:hover{border-color:var(--gold);background:rgba(201,149,42,0.07)}
+.giving-icon-wrap{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.giving-name{font-size:15px;font-weight:700;color:var(--white);margin-bottom:2px}
+.giving-detail{font-size:12px;color:var(--text-muted)}
+.giving-arrow{font-size:16px;color:var(--gold);margin-left:auto;flex-shrink:0}
+
+/* ═══════════════════════════════════════════════════
+   PROFILE
+═══════════════════════════════════════════════════ */
+.profile-hero{display:flex;flex-direction:column;align-items:center;padding:24px 16px 16px;text-align:center}
+.profile-photo-ring{width:100px;height:100px;border-radius:50%;padding:3px;background:linear-gradient(135deg,var(--gold),var(--gold-light));margin-bottom:12px}
+.profile-photo-inner{width:100%;height:100%;border-radius:50%;background:var(--purple-mid);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:32px;color:var(--gold);overflow:hidden}
+.profile-photo-inner img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.profile-status-badge{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);background:rgba(201,149,42,0.12);border:1px solid rgba(201,149,42,0.3);padding:3px 12px;border-radius:20px;margin-bottom:8px;display:inline-block}
+.profile-name{font-family:var(--font-display);font-size:22px;color:var(--white);margin-bottom:4px}
+.profile-ministries{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:10px}
+.ministry-tag{font-size:10px;color:var(--gold-light);background:rgba(107,53,184,0.3);border:1px solid rgba(107,53,184,0.5);padding:3px 10px;border-radius:20px}
+
+/* ═══════════════════════════════════════════════════
+   WATCH CARE
+═══════════════════════════════════════════════════ */
+.watchcare-hero{
+  background:linear-gradient(135deg,rgba(107,53,184,0.3),rgba(201,149,42,0.1));
+  border:1px solid rgba(201,149,42,0.3);
+  border-radius:var(--radius);padding:24px;text-align:center;margin-bottom:16px;
+}
+.wc-icon{font-size:40px;margin-bottom:12px}
+.wc-title{font-family:var(--font-display);font-size:18px;color:var(--gold-light);margin-bottom:8px}
+.wc-desc{font-size:14px;line-height:1.7;color:rgba(255,255,255,0.8)}
+.coming-soon-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  font-size:11px;letter-spacing:2px;text-transform:uppercase;
+  color:var(--text-muted);border:1px dashed rgba(255,255,255,0.2);
+  padding:8px 20px;border-radius:20px;margin-top:16px;
+}
+
+/* ═══════════════════════════════════════════════════
+   ADMIN PANEL
+═══════════════════════════════════════════════════ */
+.admin-panel{display:none}
+.admin-panel.active{display:block}
+.admin-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px;background:rgba(255,0,80,0.08);border:1px solid rgba(255,80,80,0.2);
+  border-radius:var(--radius-sm);margin-bottom:16px;
+}
+.admin-badge{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#fca5a5;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);padding:3px 10px;border-radius:20px}
+
+/* ═══════════════════════════════════════════════════
+   NOTIFICATIONS PANEL
+═══════════════════════════════════════════════════ */
+.notif-panel{
+  position:fixed;top:58px;right:0;left:0;z-index:150;
+  background:rgba(26,10,46,0.98);backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--card-border);
+  max-height:0;overflow:hidden;
+  transition:max-height 0.3s ease;
+}
+.notif-panel.open{max-height:400px;overflow-y:auto}
+.notif-item{display:flex;gap:12px;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,0.06)}
+.notif-icon{width:36px;height:36px;border-radius:50%;background:rgba(201,149,42,0.15);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.notif-title{font-size:13px;font-weight:600;color:var(--white);margin-bottom:3px}
+.notif-body{font-size:12px;color:var(--text-muted)}
+.notif-time{font-size:11px;color:rgba(255,255,255,0.3);margin-top:3px}
+.notif-empty{padding:24px;text-align:center;font-size:14px;color:var(--text-muted)}
+
+/* ═══════════════════════════════════════════════════
+   PASTOR PAGE
+═══════════════════════════════════════════════════ */
+.pastor-photo-ring{width:120px;height:120px;border-radius:50%;padding:3px;background:linear-gradient(135deg,var(--gold),var(--gold-light),var(--gold));margin:0 auto 16px;display:block}
+.pastor-photo-inner{width:100%;height:100%;border-radius:50%;background:var(--purple-mid);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:36px;color:var(--gold)}
+</style>
+</head>
+<body>
+
+<!-- ═══ SPLASH ═══ -->
+<div id="debug-overlay" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.92);padding:20px;overflow-y:auto;font-family:monospace;font-size:12px;color:#f87171">
+  <div style="color:#c9952a;font-size:14px;font-weight:700;margin-bottom:12px">⚠ DEBUG MODE — Remove before production</div>
+  <div id="debug-log"></div>
+</div>
+<div id="splash">
+  <div class="splash-logo-wrap auth-logo">
+    <div class="splash-ring"></div>
+    <div class="splash-inner">
+      <svg width="50" height="50" viewBox="0 0 50 50" fill="none">
+        <rect x="20" y="5" width="10" height="32" rx="1.5" fill="#c9952a"/>
+        <rect x="13" y="16" width="6" height="21" rx="1.5" fill="white" opacity="0.85"/>
+        <rect x="31" y="16" width="6" height="21" rx="1.5" fill="white" opacity="0.85"/>
+        <rect x="6" y="24" width="5" height="13" rx="1.5" fill="white" opacity="0.6"/>
+        <rect x="39" y="24" width="5" height="13" rx="1.5" fill="white" opacity="0.6"/>
+      </svg>
+    </div>
+  </div>
+  <div class="splash-title">DOMINION CITY</div>
+  <div class="splash-sub" id="splash-sub">Church · Navasota, TX</div>
+  <div class="splash-bar"><div class="splash-fill"></div></div>
+</div>
+
+<!-- ═══ AUTH ═══ -->
+<div id="auth-screen" class="hidden">
+  <div class="splash-logo-wrap auth-logo">
+    <div class="splash-ring"></div>
+    <div class="splash-inner">
+      <svg width="50" height="50" viewBox="0 0 50 50" fill="none">
+        <rect x="20" y="5" width="10" height="32" rx="1.5" fill="#c9952a"/>
+        <rect x="13" y="16" width="6" height="21" rx="1.5" fill="white" opacity="0.85"/>
+        <rect x="31" y="16" width="6" height="21" rx="1.5" fill="white" opacity="0.85"/>
+        <rect x="6" y="24" width="5" height="13" rx="1.5" fill="white" opacity="0.6"/>
+        <rect x="39" y="24" width="5" height="13" rx="1.5" fill="white" opacity="0.6"/>
+      </svg>
+    </div>
+  </div>
+  <div class="auth-title">DOMINION CITY CHURCH</div>
+  <div class="auth-sub">Enter your PIN to continue</div>
+  <div class="pin-dots">
+    <div class="pin-dot" id="dot-0"></div>
+    <div class="pin-dot" id="dot-1"></div>
+    <div class="pin-dot" id="dot-2"></div>
+    <div class="pin-dot" id="dot-3"></div>
+    <div class="pin-dot" id="dot-4"></div>
+    <div class="pin-dot" id="dot-5"></div>
+  </div>
+  <div class="auth-error" id="auth-error"></div>
+  <div class="pin-pad">
+    <button class="pin-key" onclick="pinPress('1')">1</button>
+    <button class="pin-key" onclick="pinPress('2')">2</button>
+    <button class="pin-key" onclick="pinPress('3')">3</button>
+    <button class="pin-key" onclick="pinPress('4')">4</button>
+    <button class="pin-key" onclick="pinPress('5')">5</button>
+    <button class="pin-key" onclick="pinPress('6')">6</button>
+    <button class="pin-key" onclick="pinPress('7')">7</button>
+    <button class="pin-key" onclick="pinPress('8')">8</button>
+    <button class="pin-key" onclick="pinPress('9')">9</button>
+    <button class="pin-key zero" onclick="pinPress('0')">0</button>
+    <button class="pin-key del" onclick="pinDel()">⌫</button>
+  </div>
+  <button class="auth-bio-btn hidden" id="bio-btn" onclick="tryBiometric()">
+    <span>👆</span> Use Fingerprint / Face ID
+  </button>
+  <div class="auth-skip" onclick="guestMode()">Continue as Visitor →</div>
+</div>
+
+<!-- ═══ APP ═══ -->
+<div id="app">
+
+  <!-- TOP NAV -->
+  <nav class="top-nav">
+    <div class="nav-brand">
+      <svg class="nav-logo" viewBox="0 0 40 40" fill="none">
+        <rect x="16" y="3" width="8" height="26" rx="1" fill="#c9952a"/>
+        <rect x="10" y="12" width="5" height="17" rx="1" fill="white" opacity="0.85"/>
+        <rect x="25" y="12" width="5" height="17" rx="1" fill="white" opacity="0.85"/>
+        <rect x="4" y="19" width="4" height="10" rx="1" fill="white" opacity="0.6"/>
+        <rect x="32" y="19" width="4" height="10" rx="1" fill="white" opacity="0.6"/>
+      </svg>
+      <div class="nav-name-block">
+        <div class="nav-church">DOMINION CITY</div>
+        <div class="nav-loc" id="nav-loc-static">Navasota, TX</div>
+      </div>
+    </div>
+    <div class="nav-right">
+      <button id="pastor-dash-btn" onclick="openPastorDashboard()" style="display:none;align-items:center;gap:6px;font-size:11px;color:var(--gold);border:1px solid rgba(201,149,42,0.4);padding:6px 12px;border-radius:20px;font-family:var(--font-display);letter-spacing:1px">✦ Dashboard</button>
+      <div class="service-pill"><div class="pulse"></div> SUN 9AM</div>
+      <button class="notif-btn" onclick="toggleNotifPanel()">
+        🔔
+        <div class="notif-badge" id="notif-badge">3</div>
+      </button>
+    </div>
+  </nav>
+
+  <!-- NOTIFICATION PANEL -->
+  <div class="notif-panel" id="notif-panel">
+    <div class="notif-item">
+      <div class="notif-icon">📢</div>
+      <div>
+        <div class="notif-title">New Announcement</div>
+        <div class="notif-body">Sunday service this week will include special worship led by the Music Ministry.</div>
+        <div class="notif-time">2 hours ago</div>
+      </div>
+    </div>
+    <div class="notif-item">
+      <div class="notif-icon">🙏</div>
+      <div>
+        <div class="notif-title">Prayer Request</div>
+        <div class="notif-body">A new prayer request has been submitted to the wall.</div>
+        <div class="notif-time">Yesterday</div>
+      </div>
+    </div>
+    <div class="notif-item">
+      <div class="notif-icon">📅</div>
+      <div>
+        <div class="notif-title">Event Reminder</div>
+        <div class="notif-body">beYOUtiful Empowerment meeting is coming up this weekend.</div>
+        <div class="notif-time">2 days ago</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content-wrap">
+
+    <!-- ════ VISITORS SCREEN ════ -->
+    <div id="screen-visitors" class="screen">
+      <div class="hero">
+        <div class="hero-bg"></div><div class="hero-pattern"></div>
+        <div class="hero-content">
+          <div class="hero-eyebrow">✦ Welcome to the Family</div>
+          <div class="hero-title">We Put The <span>DO</span><br>In Dominion</div>
+          <div class="hero-scripture">"I have loved thee with an everlasting love: therefore with lovingkindness have I drawn thee." — Jeremiah 31:3</div>
+          <div class="hero-btns">
+            <button class="btn-gold" onclick="switchTab('connect')">Connect With Us</button>
+            <button class="btn-outline" onclick="switchTab('connect')">Give Online</button>
+          </div>
+        </div>
+      </div>
+      <div class="info-grid">
+        <div class="info-tile"><div class="info-label">Sunday Service</div><div class="info-value">9:00 AM</div><div class="info-sub">Every Sunday</div></div>
+        <div class="info-tile"><div class="info-label">Location</div><div class="info-value" data-config="city">Navasota</div><div class="info-sub" data-config="address">625 Blackshear St</div></div>
+        <div class="info-tile"><div class="info-label">Phone</div><div class="info-value" style="font-size:13px" data-config="phone">936-320-1852</div><div class="info-sub">Call or Text</div></div>
+        <div class="info-tile"><div class="info-label">Pastor</div><div class="info-value" style="font-size:13px">Shan E. Davis</div><div class="info-sub">Lead Pastor</div></div>
+      </div>
+      <div class="section-head"><div class="section-title">About DCC</div></div>
+      <div class="card">
+        <div style="font-size:14px;line-height:1.8;color:rgba(255,255,255,0.8)">
+          Dominion City Church is a group of people from different backgrounds, denominations, and ethnicities — but we gather in the name of Jesus. We are not perfect people, but we are committed to get it right.<br><br>
+          <strong style="color:var(--gold-light)">Our Vision:</strong> To help people become everything God ordained them to be.<br><br>
+          <strong style="color:var(--gold-light)">Our Mission:</strong> Pray for mankind, prepare believers for their purpose, and propel them forward.
+        </div>
+      </div>
+      <div class="section-head"><div class="section-title" id="pastor-section-title">Pastor Shan E. Davis</div></div>
+      <div class="card" style="display:flex;gap:14px;align-items:center">
+        <div class="pastor-photo-ring" style="width:70px;height:70px;margin:0;flex-shrink:0">
+          <div class="pastor-photo-inner" style="font-size:22px">SD</div>
+        </div>
+        <div>
+          <div style="font-family:var(--font-display);font-size:15px;color:var(--white);margin-bottom:4px" data-config="pastor">Pastor Shan E. Davis</div>
+          <div style="font-size:12px;color:var(--gold);margin-bottom:8px">Senior / Lead Pastor</div>
+          <a href="javascript:void(0)" onclick="window.location='mailto:'+CONFIG.pastorEmail" style="font-size:12px;color:var(--text-muted)">Psed@dominioncity.net</a>
+        </div>
+      </div>
+      <!-- Connect Card -->
+      <div class="section-head"><div class="section-title">Connect Card</div></div>
+      <div class="card">
+        <div id="connect-card-form">
+          <div class="form-group"><label class="form-label">Full Name</label><input type="text" class="form-input" id="cc-name" placeholder="Your name"></div>
+          <div class="form-group"><label class="form-label">Email</label><input type="email" class="form-input" id="cc-email" placeholder="your@email.com"></div>
+          <div class="form-group"><label class="form-label">Phone</label><input type="tel" class="form-input" id="cc-phone" placeholder="(000) 000-0000"></div>
+          <div class="form-group"><label class="form-label">Visit Type</label>
+            <select class="form-input" id="cc-visit">
+              <option value="">Select...</option>
+              <option>First time visitor</option>
+              <option>Returning visitor</option>
+              <option>Watch Care</option>
+              <option>Joining as member</option>
+              <option>Joining as E-Member</option>
+            </select>
+          </div>
+          <div class="form-group"><label class="form-label">Prayer Request</label><textarea class="form-input" id="cc-prayer" placeholder="Share a prayer request..."></textarea></div>
+          <button class="btn-gold btn-full" onclick="submitConnectCard()">Submit Connect Card ✦</button>
+        </div>
+        <div class="toast" id="cc-toast">🙏 Welcome to the family! The team will reach out soon.</div>
+      </div>
+    </div>
+
+    <!-- ════ MEMBERS SCREEN ════ -->
+    <div id="screen-members" class="screen">
+
+      <!-- Guest gate (shown when not logged in / profile incomplete) -->
+      <div id="guest-gate" style="display:none">
+        <div class="profile-gate-banner">
+          <div class="gate-icon">🔐</div>
+          <div class="gate-text">
+            <strong>Complete your profile to unlock ministry rooms</strong>
+            <span>Prayer and Giving are available while you set up</span>
+          </div>
+          <button class="gate-btn" onclick="showProfileSetup()">Set Up</button>
+        </div>
+        <!-- Restricted: prayer submit + giving link only -->
+        <div class="section-head"><div class="section-title">Submit Prayer Request</div></div>
+        <div class="card">
+          <div class="form-group"><textarea class="form-input" placeholder="Share your prayer request..." rows="3" id="guest-prayer"></textarea></div>
+          <div class="form-group">
+            <select class="form-input" id="guest-prayer-type">
+              <option value="public">Public Prayer Wall</option>
+              <option value="private">Private (Pastor + Intercessory Team only)</option>
+            </select>
+          </div>
+          <button class="btn-gold btn-full" onclick="submitGuestPrayer()">Submit Prayer ✦</button>
+          <div class="toast" id="guest-prayer-toast">🙏 Your prayer request has been received.</div>
+        </div>
+        <div class="section-head"><div class="section-title">Give Online</div></div>
+        <div id="giving-section-guest"></div>
+      </div>
+
+      <!-- Full member view -->
+      <div id="member-view">
+        <!-- Scripture of the day -->
+        <div class="scripture-card" id="scripture-display">
+          <div class="scripture-date" id="scripture-date-label">Today's Scripture</div>
+          <div class="scripture-verse" id="scripture-verse-text">"The LORD hath appeared of old unto me, saying, Yea, I have loved thee with an everlasting love: therefore with lovingkindness have I drawn thee."</div>
+          <div class="scripture-ref" id="scripture-ref-text">— Jeremiah 31:3</div>
+        </div>
+
+        <!-- Ministry rooms -->
+        <div class="section-head"><div class="section-title">My Ministry Rooms</div></div>
+        <div class="ministry-grid" id="ministry-rooms-grid">
+          <!-- Rendered by JS based on user affiliations -->
+        </div>
+
+        <!-- Ministry room detail (shown when room tapped) -->
+        <div id="ministry-detail">
+          <div class="room-header">
+            <span class="room-back" onclick="closeRoom()">←</span>
+            <div class="room-header-info">
+              <div class="room-header-name" id="room-detail-name">Ministry Room</div>
+              <div class="room-header-sub" id="room-detail-sub">Group Chat & Resources</div>
+            </div>
+          </div>
+          <div class="room-tabs">
+            <button class="room-tab active" onclick="switchRoomTab(this,'chat')">💬 Chat</button>
+            <button class="room-tab" onclick="switchRoomTab(this,'qotw')">❓ QOTW</button>
+            <button class="room-tab" onclick="switchRoomTab(this,'members')">👥 Members</button>
+            <button class="room-tab" id="room-ann-tab" style="display:none" onclick="switchRoomTab(this,'announcements')">📢 Announce</button>
+          </div>
+          <!-- Chat panel -->
+          <div id="room-chat-panel">
+            <div class="chat-wrap" id="chat-messages">
+              <div class="chat-msg">
+                <div class="chat-avatar">SD</div>
+                <div><div class="chat-name" data-config="pastor">Pastor Shan E. Davis</div>
+                <div class="chat-bubble">Welcome to the ministry room! This is a safe space for us to communicate, pray, and grow together. 🙏<div class="chat-time">9:00 AM</div></div></div>
+              </div>
+            </div>
+            <div class="chat-input-row">
+              <input type="text" class="chat-input" id="chat-input" placeholder="Type a message..." onkeydown="if(event.key==='Enter')sendChatMsg()">
+              <button class="chat-send" onclick="sendChatMsg()">➤</button>
+            </div>
+          </div>
+          <!-- QOTW panel -->
+          <div id="room-qotw-panel" style="display:none">
+            <div class="qotw-card">
+              <div class="qotw-label">This Week's Question</div>
+              <div class="qotw-question" id="qotw-text">"How has God called you to take dominion in your specific area of gifting this week?"</div>
+            </div>
+            <div class="form-group"><textarea class="form-input" placeholder="Share your response..." rows="4" id="qotw-response"></textarea></div>
+            <button class="btn-gold btn-full">Submit Response ✦</button>
+          </div>
+          <!-- Members panel -->
+          <div id="room-members-panel" style="display:none">
+            <div id="room-members-list"></div>
+          </div>
+          <!-- Announcements panel — Media Ministry only -->
+          <div id="room-announcements-panel" style="display:none">
+            <div style="background:rgba(201,149,42,0.08);border:1px solid rgba(201,149,42,0.2);border-radius:var(--radius-sm);padding:14px;margin-bottom:16px">
+              <div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:4px">📢 Media Ministry</div>
+              <div style="font-size:13px;color:rgba(255,255,255,0.7)">Post announcements here and they go live to the whole church immediately.</div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Announcement Title</label>
+              <input type="text" class="form-input" id="ann-title-input" placeholder="e.g. Sunday Service Update">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Message</label>
+              <textarea class="form-input" id="ann-body-input" rows="4" placeholder="Write your announcement..."></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">YouTube Link (optional)</label>
+              <input type="text" class="form-input" id="ann-yt-input" placeholder="https://youtube.com/...">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Image URL (optional)</label>
+              <input type="text" class="form-input" id="ann-img-input" placeholder="https://...">
+            </div>
+            <button class="btn-gold btn-full" onclick="postAnnouncement()">Publish Announcement ✦</button>
+            <div class="toast" id="ann-post-toast">✅ Announcement published to the whole church.</div>
+            <div class="gold-divider"></div>
+            <div class="section-head" style="margin-top:4px"><div class="section-title">Recent Announcements</div></div>
+            <div id="ann-media-list"></div>
+          </div>
+        </div>
+
+        <!-- Community Feed -->
+        <div class="section-head"><div class="section-title">Church Community</div><span class="section-more" onclick="switchTab('watch')">See all</span></div>
+        <div class="feed-compose">
+          <div class="compose-row">
+            <div class="feed-avatar" id="compose-avatar">ME</div>
+            <input type="text" class="compose-input" placeholder="Share something with the church..." id="compose-text">
+          </div>
+          <div class="compose-actions">
+            <button class="compose-type-btn active" onclick="setComposeType(this,'text')">✏️ Text</button>
+            <button class="compose-type-btn" onclick="setComposeType(this,'photo')">📷 Photo</button>
+            <button class="compose-type-btn" onclick="setComposeType(this,'video')">🎬 Video</button>
+          </div>
+          <input type="file" id="media-upload" accept="image/*,video/*" style="display:none" onchange="handleMediaUpload(this)">
+          <input type="text" class="form-input" id="video-link-input" placeholder="Paste YouTube or Facebook video link..." style="display:none;margin-top:10px">
+          <button class="btn-gold" style="margin-top:10px;font-size:11px;padding:8px 18px" onclick="submitPost()">Post ✦</button>
+        </div>
+        <div id="feed-posts-container">
+          <!-- Sample post -->
+          <div class="feed-post">
+            <div class="feed-post-header">
+              <div class="feed-avatar">DCC</div>
+              <div><div class="feed-poster-name" data-config="shortName">Dominion City Church</div><div class="feed-post-time">Today at 9:15 AM</div></div>
+            </div>
+            <div class="feed-post-content">Give thanks to the Lord, for He is good! 🙏✨ What a powerful service today. We are walking in DOMINION! Share what God spoke to you this morning.</div>
+            <div class="feed-post-actions">
+              <button class="feed-action-btn" onclick="toggleLike(this)">🤍 Like <span class="like-count">12</span></button>
+              <button class="feed-action-btn" onclick="showComments(this)">💬 Comment <span>4</span></button>
+              <button class="feed-action-btn" onclick="reportPost(this)">⚑ Report</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ CONNECT WITH US SCREEN ════ -->
+    <div id="screen-connect" class="screen">
+      <div class="section-head"><div class="section-title">Give Online</div></div>
+      <a href="javascript:void(0)" onclick="window.open(CONFIG.giving.square,'_blank')" class="giving-option" style="display:flex">
+        <div class="giving-icon-wrap" style="background:rgba(0,200,100,0.1)">💳</div>
+        <div><div class="giving-name">Debit / Credit Card</div><div class="giving-detail">Secure giving via Square</div></div>
+        <div class="giving-arrow">→</div>
+      </a>
+      <div class="giving-option" onclick="copyToClip(CONFIG.giving.zelle,'Zelle ID copied!')">
+        <div class="giving-icon-wrap" style="background:rgba(100,100,255,0.12)">💜</div>
+        <div><div class="giving-name">Zelle</div><div class="giving-detail" id="zelle-detail">admin@dominioncity.net — tap to copy</div></div>
+        <div class="giving-arrow">⎘</div>
+      </div>
+      <div class="giving-option" onclick="copyToClip(CONFIG.giving.cashapp,'Cash App ID copied!')">
+        <div class="giving-icon-wrap" style="background:rgba(0,200,80,0.1)">💚</div>
+        <div><div class="giving-name">Cash App</div><div class="giving-detail" id="cashapp-detail">$DCCNAVASOTA — tap to copy</div></div>
+        <div class="giving-arrow">⎘</div>
+      </div>
+      <div class="toast" id="copy-toast" style="margin-top:8px"></div>
+      <div class="gold-divider"></div>
+      <div class="section-head"><div class="section-title">Get In Touch</div></div>
+      <div class="card">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <a href="javascript:void(0)" onclick="window.location='tel:'+CONFIG.phone.replace(/[^\d]/g,'')" style="display:flex;align-items:center;gap:12px;padding:12px;background:rgba(255,255,255,0.04);border-radius:8px">
+            <span style="font-size:20px">📞</span><div><div style="font-size:12px;color:var(--text-muted)">PHONE</div><div style="font-size:13px;color:var(--gold-light)">(936) 320-1852</div></div>
+          </a>
+          <a href="javascript:void(0)" onclick="window.location='mailto:'+CONFIG.email" style="display:flex;align-items:center;gap:12px;padding:12px;background:rgba(255,255,255,0.04);border-radius:8px">
+            <span style="font-size:20px">✉️</span><div><div style="font-size:12px;color:var(--text-muted)">EMAIL</div><div style="font-size:13px;color:var(--gold-light)">info@dominioncity.net</div></div>
+          </a>
+          <a href="javascript:void(0)" onclick="window.open(CONFIG.mapsUrl,'_blank')" style="display:flex;align-items:center;gap:12px;padding:12px;background:rgba(255,255,255,0.04);border-radius:8px">
+            <span style="font-size:20px">📍</span><div><div style="font-size:12px;color:var(--text-muted)">ADDRESS</div><div style="font-size:13px;color:var(--gold-light)" data-config="address">625 Blackshear St, Navasota TX 77868</div></div>
+          </a>
+          <a href="javascript:void(0)" onclick="window.open(CONFIG.facebook,'_blank')" style="display:flex;align-items:center;gap:12px;padding:12px;background:rgba(255,255,255,0.04);border-radius:8px">
+            <span style="font-size:20px">📘</span><div><div style="font-size:12px;color:var(--text-muted)">FACEBOOK</div><div style="font-size:13px;color:var(--gold-light)">DCCNAVASOTA</div></div>
+          </a>
+          <a href="javascript:void(0)" onclick="window.open(CONFIG.youtube,'_blank')" style="display:flex;align-items:center;gap:12px;padding:12px;background:rgba(255,255,255,0.04);border-radius:8px">
+            <span style="font-size:20px">▶️</span><div><div style="font-size:12px;color:var(--text-muted)">YOUTUBE</div><div style="font-size:13px;color:var(--gold-light)">DCC Navasota</div></div>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ WATCH CARE SCREEN ════ -->
+    <div id="screen-watch" class="screen">
+      <div class="watchcare-hero">
+        <div class="wc-icon">🛡️</div>
+        <div class="wc-title">Watch Care</div>
+        <div class="wc-desc">
+          Under Watch Care means you're connected to Dominion City Church — Pastor Shan is praying for you, watching over your spiritual journey, and walking with you as you find your place in the family.<br><br>
+          You have full access to all church activities and ministry while you're discerning your commitment.
+        </div>
+        <div class="coming-soon-badge">📺 Live Stream — Coming Soon</div>
+      </div>
+      <div class="section-head"><div class="section-title">Announcements</div></div>
+      <div id="announcements-container">
+        <div class="announcement-item">
+          <div class="ann-content">
+            <div class="ann-date">This Sunday</div>
+            <div class="ann-title">Sunday Morning Service — 9:00 AM</div>
+            <div class="ann-body">Join us this Sunday as we continue our series on walking in your God-given authority. Come ready to receive! 625 Blackshear St, Navasota TX.</div>
+          </div>
+        </div>
+        <div class="announcement-item">
+          <div class="ann-content">
+            <div class="ann-date">Coming Soon</div>
+            <div class="ann-title">beYOUtiful Empowerment — Youth Event</div>
+            <div class="ann-body">Our next beYOUtiful Empowerment gathering is being planned. Stay connected for details on dates and how your youth can participate.</div>
+            <a href="javascript:void(0)" onclick="window.open(CONFIG.youtube,'_blank')" class="ann-yt-link">▶️ Watch on YouTube</a>
+          </div>
+        </div>
+      </div>
+      <!-- Calendar -->
+      <div class="section-head"><div class="section-title">Events Calendar</div></div>
+      <div class="card">
+        <div class="calendar-header">
+          <button class="cal-nav" onclick="calNav(-1)">‹</button>
+          <div class="cal-month" id="cal-month-label">March 2026</div>
+          <button class="cal-nav" onclick="calNav(1)">›</button>
+        </div>
+        <div class="cal-grid" id="cal-grid"></div>
+      </div>
+      <div class="section-head"><div class="section-title">Upcoming Events</div></div>
+      <div id="events-list">
+        <div class="event-list-item">
+          <div class="event-date-box"><div class="ev-month">SUN</div><div class="ev-day">29</div></div>
+          <div class="event-info"><div class="event-info-title">Sunday Service</div><div class="event-info-detail">9:00 AM · 625 Blackshear St · All welcome</div><button class="remind-btn" onclick="setReminder(this,'Sunday Service')">🔔 Remind Me</button></div>
+        </div>
+        <div class="event-list-item">
+          <div class="event-date-box"><div class="ev-month">TBD</div><div class="ev-day">—</div></div>
+          <div class="event-info"><div class="event-info-title">beYOUtiful Empowerment</div><div class="event-info-detail">Youth Ministry · Stay tuned for date</div><button class="remind-btn" onclick="setReminder(this,'beYOUtiful Empowerment')">🔔 Remind Me</button></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ CARE SCREEN (Prayer Wall) ════ -->
+    <div id="screen-care" class="screen">
+      <div class="section-head"><div class="section-title">Prayer Wall</div></div>
+      <!-- Submit -->
+      <div class="card">
+        <div class="card-title"><div class="card-icon">🙏</div>Submit a Prayer Request</div>
+        <div class="form-group"><textarea class="form-input" id="prayer-input" placeholder="Share your prayer request..." rows="3"></textarea></div>
+        <div class="prayer-type-toggle">
+          <button class="prayer-toggle-btn active" id="prayer-public-btn" onclick="setPrayerType('public')">🌐 Public Wall</button>
+          <button class="prayer-toggle-btn" id="prayer-private-btn" onclick="setPrayerType('private')">🔒 Private (Pastor + Team Only)</button>
+        </div>
+        <div class="form-group" style="flex-direction:row;align-items:center;gap:10px">
+          <input type="checkbox" id="prayer-anon" style="width:16px;height:16px;accent-color:var(--gold)">
+          <label for="prayer-anon" class="form-label" style="margin:0;cursor:pointer">Submit anonymously</label>
+        </div>
+        <button class="btn-gold btn-full" onclick="submitPrayer()">Submit Prayer ✦</button>
+        <div class="toast" id="prayer-toast">🙏 Your prayer request has been received by the church.</div>
+      </div>
+      <!-- Public wall -->
+      <div class="section-head"><div class="section-title">Public Prayer Wall</div></div>
+      <div id="prayer-wall-public">
+        <div class="prayer-item">
+          <div class="prayer-meta"><span class="prayer-name">Sister Grace M.</span><span class="prayer-time">2 hours ago</span></div>
+          <div class="prayer-text">Please pray for my family as we navigate some health challenges. Believing God for complete healing and peace.</div>
+          <div class="prayer-actions">
+            <button class="pray-btn" onclick="prayForRequest(this)">🙏 I Prayed</button>
+            <span class="pray-count">🙏 <span class="count-num">7</span> praying</span>
+          </div>
+        </div>
+        <div class="prayer-item">
+          <div class="prayer-meta"><span class="prayer-name">Anonymous</span><span class="prayer-time">Yesterday</span></div>
+          <div class="prayer-text">Praying for strength and direction. God is moving but I need the body of Christ standing with me.</div>
+          <div class="prayer-actions">
+            <button class="pray-btn" onclick="prayForRequest(this)">🙏 I Prayed</button>
+            <span class="pray-count">🙏 <span class="count-num">14</span> praying</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end content-wrap -->
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <button class="tab active" onclick="switchTab('visitors',this)">
+      <span class="tab-icon">🏛️</span><span class="tab-label">Visitors</span>
+    </button>
+    <button class="tab" onclick="switchTab('members',this)">
+      <span class="tab-icon">✝️</span><span class="tab-label">Members</span>
+    </button>
+    <button class="tab" onclick="switchTab('connect',this)">
+      <span class="tab-icon">🤝</span><span class="tab-label">Connect</span>
+    </button>
+    <button class="tab" onclick="switchTab('watch',this)">
+      <span class="tab-icon">🛡️</span><span class="tab-label">Watch Care</span>
+    </button>
+    <button class="tab" onclick="switchTab('care',this)">
+      <span class="tab-icon">🙏</span><span class="tab-label">Care</span>
+    </button>
+  </nav>
+
+</div><!-- end app -->
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+/* ═══════════════════════════════════════════════════
+   SUPABASE CLIENT
+═══════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════
+   WHITE-LABEL MASTER CONFIG
+   ─────────────────────────────────────────────────
+   NEW CLIENT = EDIT THIS BLOCK ONLY.
+   Every screen, every AI prompt, every notification
+   reads from here. Nothing else needs to change.
+═══════════════════════════════════════════════════ */
+const CONFIG = {
+
+  // ── IDENTITY ──────────────────────────────────────
+  churchName:     'Dominion City Church',
+  shortName:      'DCC',
+  pastor:         'Pastor Shan E. Davis',
+  pastorEmail:    'Psed@dominioncity.net',
+  tagline:        'We put the DO in Dominion',
+  foundingVerse:  'Jeremiah 31:3',
+  youthMinistry:  'beYOUtiful Empowerment',
+  spiritualFlow:  'Prophetic and Apostolic',
+
+  // ── LOCATION & CONTACT ────────────────────────────
+  address:        '625 Blackshear St, Navasota, TX 77868',
+  city:           'Navasota',
+  state:          'TX',
+  zip:            '77868',
+  county:         'Grimes County',
+  phone:          '936-320-1852',
+  email:          'info@dominioncity.net',
+  mailingAddress: 'P.O. Box 183, Navasota, TX 77868',
+  serviceTime:    'Sunday 9:00 AM',
+  mapsUrl:        'https://maps.google.com/?q=625+Blackshear+St+Navasota+TX+77868',
+
+  // ── SOCIAL ────────────────────────────────────────
+  facebook:       'https://www.facebook.com/DCCNAVASOTA',
+  youtube:        'https://www.youtube.com/channel/UCdI8qjPlo-sI_hn_Pl3MaGg',
+  website:        'https://www.dominioncity.net',
+
+  // ── GIVING ────────────────────────────────────────
+  giving: {
+    square:   'https://checkout.square.site/merchant/MLM37VA9CDQG6/checkout/FXSTTO7TGCBG52XBCHWB4VMX?src=sms',
+    zelle:    'admin@dominioncity.net',
+    cashapp:  '$DCCNAVASOTA'
+  },
+
+  // ── SUPABASE ──────────────────────────────────────
+  supabaseUrl:    'https://dmjdkowpskvrcjrxlcud.supabase.co',
+  supabaseKey:    'sb_publishable_rflFSxTH9UorqyXPe6AVOA_r43hOw-D',
+
+  // ── BRAND COLORS ──────────────────────────────────
+  // Update CSS :root vars above to match new client
+  primaryColor:   '#1a0a2e',
+  accentColor:    '#c9952a',
+
+  // ── SW CACHE ──────────────────────────────────────
+  // Change per client so caches don't collide
+  swCacheName:    'dcc-v1',
+
+  // ── MISSION (drives AI governance) ───────────────
+  mission: 'Pray for mankind, prepare believers for their purpose, and propel them forward',
+  vision:  'Help people become everything God has ordained them to be',
+  coreValues: 'Pursuing Godly Maturity, Praying for All Men, Serving the Community',
+
+};
+
+/* ═══════════════════════════════════════════════════
+   AUDIT LOGGER
+   Replaces all console.log/warn/error in the app.
+   Events route to Supabase audit_log table.
+   Nothing sensitive ever appears in browser console.
+   Admins view logs in Supabase dashboard only.
+═══════════════════════════════════════════════════ */
+const AUDIT_URL = `${CONFIG.supabaseUrl}/functions/v1/dcc-audit`;
+
+// Session ID — anonymous identifier for this session only
+const SESSION_ID = Math.random().toString(36).slice(2, 10);
+
+// DEBUG: show errors visibly on screen
+function debugLog(msg, type='info') {
+  const overlay = document.getElementById('debug-overlay');
+  const log = document.getElementById('debug-log');
+  if (!overlay || !log) return;
+  overlay.style.display = 'block';
+  const el = document.createElement('div');
+  el.style.cssText = 'padding:4px 0;border-bottom:1px solid #333;color:' + (type==='error' ? '#f87171' : type==='warn' ? '#fde68a' : '#86efac');
+  el.textContent = '[' + new Date().toLocaleTimeString() + '] ' + msg;
+  log.appendChild(el);
+}
+
+window.addEventListener('load', () => {
+  window.addEventListener('error', e => {
+    debugLog('ERROR: ' + e.message + ' (line ' + e.lineno + ')', 'error');
+  });
+  window.addEventListener('unhandledrejection', e => {
+    debugLog('PROMISE: ' + String(e.reason).substring(0, 200), 'error');
+  });
+});
+
+
+function auditLog(level, event, detail = {}) {
+  // Fire-and-forget — never await, never block the UI
+  try {
+    fetch(AUDIT_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${CONFIG.supabaseKey}`
+      },
+      body: JSON.stringify({
+        level,
+        event,
+        detail,
+        member_id: APP?.member?.id || null,
+        session_id: SESSION_ID
+      })
+    });
+  } catch(_) {
+    // Silent — audit failures never surface to user
+  }
+}
+
+// DEBUG MODE — console restored
+const _noop = () => {}; // kept so auditLog refs don't break
+
+// Catch unhandled errors — deferred until auditLog is defined
+window.addEventListener('load', () => {
+  window.addEventListener('error', (e) => {
+    if (typeof auditLog === 'function') auditLog('error', 'unhandled_error', {
+      message: e.message, filename: e.filename, lineno: e.lineno
+    });
+  });
+  window.addEventListener('unhandledrejection', (e) => {
+    if (typeof auditLog === 'function') auditLog('error', 'unhandled_promise', {
+      reason: String(e.reason).substring(0, 200)
+    });
+  });
+});
+
+/* Supabase client — reads from CONFIG */
+const SUPABASE_URL = CONFIG.supabaseUrl;
+const SUPABASE_KEY = CONFIG.supabaseKey;
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+/* ═══════════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════════ */
+const APP = {
+  pin: '',
+  authed: false,
+  member: null,
+  currentRoom: null,
+  currentRoomTab: 'chat',
+  prayerType: 'public',
+  composeType: 'text',
+  calYear: 2026,
+  calMonth: 2, // 0-indexed, 2 = March
+  biometricEnabled: false,
+  guestMode: false,
+  // DEMO member — replace with Supabase auth
+  demoMember: {
+    id: 'demo-001',
+    full_name: 'Demo Member',
+    status: 'member',
+    gender: 'male',
+    profile_complete: true,
+    is_admin: false,
+    ministry_affiliations: ['mens','prayer','media'],
+    initials: 'DM'
+  }
+};
+
+/* Ministry room definitions */
+const ROOMS = {
+  five_fold: { name: '5-Fold Ministers', icon: '👑', sub: 'Pastors · Apostles · Prophets · Evangelists' },
+  pastors_aide: { name: "Pastor's Aide", icon: '📋', sub: 'Administration & Support' },
+  mens: { name: "Men's Ministry", icon: '⚔️', sub: 'Brotherhood & Accountability' },
+  womens: { name: "Women's Ministry", icon: '👸', sub: 'Sisterhood & Growth' },
+  prayer: { name: 'Prayer Ministry', icon: '🙏', sub: 'Intercession & Warfare' },
+  musicians: { name: 'Musicians', icon: '🎵', sub: 'Worship Team' },
+  deacons: { name: 'Deacons', icon: '🛡️', sub: 'Service & Leadership' },
+  finance: { name: 'Finance', icon: '💰', sub: 'Stewardship Team' },
+  media: { name: 'Media Ministry', icon: '📸', sub: 'Content & Communications' }
+};
+
+/* ═══════════════════════════════════════════════════
+   SPLASH → AUTH
+═══════════════════════════════════════════════════ */
+debugLog('Splash timer fired');
+setTimeout(() => {
+  document.getElementById('splash').classList.add('out');
+  setTimeout(() => {
+    document.getElementById('splash').style.display = 'none';
+    document.getElementById('auth-screen').classList.remove('hidden');
+    debugLog('Auth screen shown');
+    checkBiometric();
+  }, 600);
+}, 2400);
+
+/* ═══════════════════════════════════════════════════
+   PIN AUTH
+═══════════════════════════════════════════════════ */
+function pinPress(d) {
+  if (APP.pin.length >= 6) return;
+  APP.pin += d;
+  updateDots();
+  if (APP.pin.length === 6) setTimeout(verifyPin, 300);
+}
+function pinDel() {
+  APP.pin = APP.pin.slice(0, -1);
+  updateDots();
+}
+function updateDots() {
+  for (let i = 0; i < 6; i++) {
+    document.getElementById('dot-'+i).classList.toggle('filled', i < APP.pin.length);
+  }
+}
+async function verifyPin() {
+  const errorEl = document.getElementById('auth-error');
+  errorEl.textContent = 'Verifying...';
+  try {
+    const { data, error } = await db
+      .from('members')
+      .select('*')
+      .eq('pin_hash', APP.pin)
+      .single();
+    if (error || !data) {
+      errorEl.textContent = 'Incorrect PIN. Try again.';
+    auditLog('security', 'pin_attempt_failed', {session: SESSION_ID});
+      APP.pin = ''; updateDots(); return;
+    }
+    APP.authed = true;
+    APP.member = {
+      ...data,
+      initials: data.full_name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase()
+    };
+    errorEl.textContent = '';
+    launchApp();
+  } catch(e) {
+    // Fallback to demo if Supabase not yet seeded
+    APP.authed = true;
+    APP.member = APP.demoMember;
+    errorEl.textContent = '';
+    launchApp();
+  }
+}
+function guestMode() {
+  APP.guestMode = true;
+  APP.member = { full_name: 'Guest', profile_complete: false, ministry_affiliations: [], gender: 'unspecified', status: 'visitor', initials: '👤' };
+  launchApp();
+}
+
+/* ═══════════════════════════════════════════════════
+   BIOMETRIC
+═══════════════════════════════════════════════════ */
+async function checkBiometric() {
+  try {
+    if (window.PublicKeyCredential && localStorage.getItem('dcc_webauthn_id')) {
+      document.getElementById('bio-btn').classList.remove('hidden');
+      APP.biometricEnabled = true;
+    }
+  } catch(e) {}
+}
+async function tryBiometric() {
+  try {
+    const credId = localStorage.getItem('dcc_webauthn_id');
+    if (!credId) return;
+    // WebAuthn assertion — wire to dcc-webauthn Edge Function
+    alert('Biometric auth: wire to dcc-webauthn Edge Function with your Supabase project.');
+  } catch(e) {
+    document.getElementById('auth-error').textContent = 'Biometric failed. Use PIN.';
+    auditLog('security', 'biometric_failed', {session: SESSION_ID});
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   LAUNCH APP
+═══════════════════════════════════════════════════ */
+function applyConfig() {
+  // Meta
+  document.getElementById('page-title').textContent = CONFIG.churchName;
+  document.getElementById('apple-title')?.setAttribute('content', CONFIG.shortName);
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', CONFIG.primaryColor);
+
+  // Nav
+  const navChurch = document.querySelector('.nav-church');
+  if (navChurch) navChurch.textContent = CONFIG.churchName.toUpperCase();
+  const navLoc = document.querySelector('.nav-loc');
+  if (navLoc) navLoc.textContent = CONFIG.city + ', ' + CONFIG.state;
+
+  // Giving dynamic values
+  const zelleDetail = document.getElementById('zelle-detail');
+  if (zelleDetail) zelleDetail.textContent = CONFIG.giving.zelle + ' — tap to copy';
+  const cashDetail = document.getElementById('cashapp-detail');
+  if (cashDetail) cashDetail.textContent = CONFIG.giving.cashapp + ' — tap to copy';
+
+  // Contact details in connect screen
+  document.querySelectorAll('[data-config]').forEach(el => {
+    const key = el.getAttribute('data-config');
+    const val = key.split('.').reduce((o,k) => o?.[k], CONFIG);
+    if (val) el.textContent = val;
+  });
+
+  // Remaining ID-targeted elements
+  const splashSub = document.getElementById('splash-sub');
+  if (splashSub) splashSub.textContent = 'Church · ' + CONFIG.city + ', ' + CONFIG.state;
+  const navLocStatic = document.getElementById('nav-loc-static');
+  if (navLocStatic) navLocStatic.textContent = CONFIG.city + ', ' + CONFIG.state;
+  const pastorTitle = document.getElementById('pastor-section-title');
+  if (pastorTitle) pastorTitle.textContent = CONFIG.pastor;
+}
+
+function launchApp() {
+  document.getElementById('auth-screen').classList.add('hidden');
+  document.getElementById('app').classList.add('on');
+  debugLog('App launched — member: ' + (APP.member?.full_name || 'guest'));
+  applyConfig();
+  loadScripture();
+  renderMinistryRooms();
+  buildCalendar();
+  updateNotifBadge();
+  loadAnnouncements();
+  loadPrayerWall();
+  loadEvents();
+  loadFeedPosts();
+  // Run Claude engine — autonomous background work
+  setTimeout(() => runClaudeEngine(), 1500);
+  // Show pastor dashboard button if leadership
+  if (APP.member?.status === 'leadership' || APP.member?.is_admin) {
+    const btn = document.getElementById('pastor-dash-btn');
+    if (btn) btn.style.display = 'flex';
+  }
+  if (APP.guestMode || !APP.member?.profile_complete) {
+    showGuestGate();
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   NAVIGATION
+═══════════════════════════════════════════════════ */
+function switchTab(name, btn) {
+  closeRoom();
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('screen-'+name).classList.add('active');
+  if (btn) btn.classList.add('active');
+  else {
+    document.querySelectorAll('.tab').forEach(t => {
+      if (t.getAttribute('onclick')?.includes("'"+name+"'")) t.classList.add('active');
+    });
+  }
+  document.querySelector('.content-wrap').scrollTop = 0;
+  if (name === 'members' && (APP.guestMode || !APP.member?.profile_complete)) showGuestGate();
+}
+
+/* ═══════════════════════════════════════════════════
+   PROFILE GATE
+═══════════════════════════════════════════════════ */
+function showGuestGate() {
+  document.getElementById('guest-gate').style.display = 'block';
+  document.getElementById('member-view').style.display = 'none';
+}
+function showProfileSetup() {
+  // TODO: navigate to profile setup flow
+  alert('Profile setup — wire to Supabase members table insert flow.');
+}
+
+/* ═══════════════════════════════════════════════════
+   DAILY SCRIPTURE
+═══════════════════════════════════════════════════ */
+const SCRIPTURES = [
+  { ref: 'Jeremiah 31:3', verse: '"The LORD hath appeared of old unto me, saying, Yea, I have loved thee with an everlasting love: therefore with lovingkindness have I drawn thee."' },
+  { ref: 'Philippians 4:13', verse: '"I can do all things through Christ which strengtheneth me."' },
+  { ref: 'Isaiah 54:17', verse: '"No weapon that is formed against thee shall prosper; and every tongue that shall rise against thee in judgment thou shalt condemn."' },
+  { ref: 'Deuteronomy 28:13', verse: '"And the LORD shall make thee the head, and not the tail; and thou shalt be above only, and thou shalt not be beneath."' },
+  { ref: 'Romans 8:28', verse: '"And we know that all things work together for good to them that love God, to them who are the called according to his purpose."' },
+  { ref: 'Proverbs 18:21', verse: '"Death and life are in the power of the tongue: and they that love it shall eat the fruit thereof."' },
+  { ref: 'Joshua 1:9', verse: '"Be strong and of a good courage; be not afraid, neither be thou dismayed: for the LORD thy God is with thee whithersoever thou goest."' }
+];
+async function loadScripture() {
+  const opts = { weekday:'long', month:'long', day:'numeric' };
+  const today = new Date().toISOString().split('T')[0];
+  try {
+    const { data } = await db
+      .from('daily_scripture')
+      .select('*')
+      .eq('display_date', today)
+      .single();
+    if (data) {
+      document.getElementById('scripture-date-label').textContent = new Date().toLocaleDateString('en-US', opts);
+      document.getElementById('scripture-verse-text').textContent = '"' + data.verse + '"';
+      document.getElementById('scripture-ref-text').textContent = '— ' + data.reference;
+      return;
+    }
+  } catch(e) {}
+  // Fallback to local rotation
+  const SCRIPTURES = [
+    { ref: 'Jeremiah 31:3', verse: 'The LORD hath appeared of old unto me, saying, Yea, I have loved thee with an everlasting love: therefore with lovingkindness have I drawn thee.' },
+    { ref: 'Philippians 4:13', verse: 'I can do all things through Christ which strengtheneth me.' },
+    { ref: 'Isaiah 54:17', verse: 'No weapon that is formed against thee shall prosper; and every tongue that shall rise against thee in judgment thou shalt condemn.' },
+    { ref: 'Deuteronomy 28:13', verse: 'And the LORD shall make thee the head, and not the tail; and thou shalt be above only, and thou shalt not be beneath.' },
+    { ref: 'Romans 8:28', verse: 'And we know that all things work together for good to them that love God, to them who are the called according to his purpose.' },
+    { ref: 'Proverbs 18:21', verse: 'Death and life are in the power of the tongue: and they that love it shall eat the fruit thereof.' },
+    { ref: 'Joshua 1:9', verse: 'Be strong and of a good courage; be not afraid, neither be thou dismayed: for the LORD thy God is with thee whithersoever thou goest.' }
+  ];
+  const s = SCRIPTURES[new Date().getDay() % SCRIPTURES.length];
+  document.getElementById('scripture-date-label').textContent = new Date().toLocaleDateString('en-US', opts);
+  document.getElementById('scripture-verse-text').textContent = '"' + s.verse + '"';
+  document.getElementById('scripture-ref-text').textContent = '— ' + s.ref;
+}
+
+/* ═══════════════════════════════════════════════════
+   MINISTRY ROOMS
+═══════════════════════════════════════════════════ */
+function renderMinistryRooms() {
+  if (!APP.member) return;
+  const grid = document.getElementById('ministry-rooms-grid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  const member = APP.member;
+  const gender = member.gender;
+  const affiliations = member.ministry_affiliations || [];
+
+  Object.entries(ROOMS).forEach(([key, room]) => {
+    // Gender gate
+    if (key === 'womens' && gender === 'male') return;
+    if (key === 'mens' && gender === 'female') return;
+
+    const hasAccess = affiliations.includes(key)
+      || (key === 'mens' && gender === 'male')
+      || (key === 'womens' && gender === 'female')
+      || member.status === 'leadership'
+      || member.is_admin;
+
+    const btn = document.createElement('button');
+    btn.className = 'ministry-room-btn' + (hasAccess ? '' : ' locked');
+    btn.innerHTML = `
+      <div class="room-icon">${room.icon}</div>
+      <div class="room-name">${room.name}</div>
+      <div class="room-badge">${hasAccess ? 'Tap to Enter' : 'Not Enrolled'}</div>
+    `;
+    if (hasAccess) btn.onclick = () => openRoom(key);
+    grid.appendChild(btn);
+  });
+}
+
+function openRoom(key) {
+  APP.currentRoom = key;
+  const room = ROOMS[key];
+  document.getElementById('ministry-rooms-grid').style.display = 'none';
+  document.getElementById('ministry-detail').classList.add('active');
+  document.getElementById('room-detail-name').textContent = room.name;
+  document.getElementById('room-detail-sub').textContent = room.sub;
+  // Show Announce tab only for Media Ministry members
+  const annTab = document.getElementById('room-ann-tab');
+  if (annTab) annTab.style.display = key === 'media' ? 'block' : 'none';
+  loadQOTW(key);
+  loadRoomMessages(key);
+  if (key === 'media') loadMediaAnnouncements();
+}
+function closeRoom() {
+  APP.currentRoom = null;
+  const grid = document.getElementById('ministry-rooms-grid');
+  const detail = document.getElementById('ministry-detail');
+  if (grid) grid.style.display = 'grid';
+  if (detail) detail.classList.remove('active');
+  switchRoomTab(null, 'chat');
+}
+function switchRoomTab(btn, tab) {
+  document.querySelectorAll('.room-tab').forEach(t => t.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  document.getElementById('room-chat-panel').style.display          = tab === 'chat'          ? 'block' : 'none';
+  document.getElementById('room-qotw-panel').style.display          = tab === 'qotw'          ? 'block' : 'none';
+  document.getElementById('room-members-panel').style.display       = tab === 'members'       ? 'block' : 'none';
+  document.getElementById('room-announcements-panel').style.display = tab === 'announcements' ? 'block' : 'none';
+}
+
+async function postAnnouncement() {
+  const title = document.getElementById('ann-title-input').value.trim();
+  const body  = document.getElementById('ann-body-input').value.trim();
+  const yt    = document.getElementById('ann-yt-input').value.trim();
+  const img   = document.getElementById('ann-img-input').value.trim();
+  if (!title || !body) { alert('Title and message are required.'); return; }
+  try {
+    await db.from('announcements').insert({
+      title,
+      body,
+      youtube_url:  yt  || null,
+      image_url:    img || null,
+      published:    true,
+      created_by:   APP.member?.id || null
+    });
+    // Clear form
+    document.getElementById('ann-title-input').value = '';
+    document.getElementById('ann-body-input').value  = '';
+    document.getElementById('ann-yt-input').value    = '';
+    document.getElementById('ann-img-input').value   = '';
+    const toast = document.getElementById('ann-post-toast');
+    toast.className = 'toast show';
+    setTimeout(() => toast.classList.remove('show'), 3000);
+    // Audit log
+    auditLog('info', 'announcement_posted', { title: title.substring(0, 60), posted_by: APP.member?.id });
+    // Refresh the lists
+    loadMediaAnnouncements();
+    loadAnnouncements();
+  } catch(e) {
+    auditLog('warn', 'announcement_post_failed', { detail: String(e).substring(0, 200) });
+    alert('Could not publish. Check your connection.');
+  }
+}
+
+async function loadMediaAnnouncements() {
+  const list = document.getElementById('ann-media-list');
+  if (!list) return;
+  list.innerHTML = '<div class="ai-status thinking">Loading...</div>';
+  try {
+    const { data } = await db
+      .from('announcements')
+      .select('*, members(full_name)')
+      .eq('published', true)
+      .order('created_at', { ascending: false })
+      .limit(10);
+    if (!data?.length) { list.innerHTML = '<div class="ai-status">No announcements yet.</div>'; return; }
+    list.innerHTML = '';
+    data.forEach(ann => {
+      const date = new Date(ann.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const poster = ann.members?.full_name || 'Media Team';
+      const el = document.createElement('div');
+      el.style.cssText = 'background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:14px;margin-bottom:10px';
+      el.innerHTML = `
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+          <div style="font-family:var(--font-display);font-size:13px;color:var(--gold-light)">${escHtml(ann.title)}</div>
+          <div style="font-size:10px;color:var(--text-muted)">${date}</div>
+        </div>
+        <div style="font-size:13px;color:rgba(255,255,255,0.8);line-height:1.6;margin-bottom:6px">${escHtml(ann.body)}</div>
+        <div style="font-size:11px;color:var(--text-muted)">Posted by ${escHtml(poster)}</div>`;
+      list.appendChild(el);
+    });
+  } catch(e) {
+    auditLog('warn', 'media_ann_load_failed', { detail: String(e).substring(0, 200) });
+    list.innerHTML = '<div class="ai-status">Could not load announcements.</div>';
+  }
+}
+function loadQOTW(room) {
+  const qotw = {
+    mens: 'How are you walking in your role as a spiritual leader this week?',
+    womens: 'How has God been speaking to you about your purpose and identity this week?',
+    prayer: 'What has God been placing on your heart to intercede for this week?',
+    musicians: 'What worship song has been ministering to your spirit this week, and why?',
+    five_fold: 'How is God shaping your ministry assignment this season?',
+    pastors_aide: 'How can we better serve and support the vision of Dominion City this week?',
+    deacons: 'What community need have you observed that the church can address?',
+    finance: 'How does Biblical stewardship apply to your personal financial decisions this week?',
+    media: 'What story from our congregation deserves to be shared with the world?'
+  };
+  document.getElementById('qotw-text').textContent = '"' + (qotw[room] || 'How is God moving in your life this week?') + '"';
+}
+
+/* ═══════════════════════════════════════════════════
+   CHAT
+═══════════════════════════════════════════════════ */
+async function sendChatMsg() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text || !APP.currentRoom) return;
+  const member = APP.member;
+  const wrap = document.getElementById('chat-messages');
+  const now = new Date().toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
+  const msg = document.createElement('div');
+  msg.className = 'chat-msg own';
+  msg.innerHTML = `
+    <div class="chat-avatar">${member.initials || 'ME'}</div>
+    <div><div class="chat-bubble">${escHtml(text)}<div class="chat-time">${now}</div></div></div>`;
+  wrap.appendChild(msg);
+  input.value = '';
+  wrap.scrollTop = wrap.scrollHeight;
+  try {
+    await db.from('messages').insert({
+      sender_id: member.id,
+      room: APP.currentRoom,
+      content: text,
+      is_church_wide: false
+    });
+  } catch(e) { auditLog('warn', 'message_insert', {detail: String(e || '').substring(0,200)}); }
+}
+
+async function loadAnnouncements() {
+  try {
+    const { data } = await db
+      .from('announcements')
+      .select('*')
+      .eq('published', true)
+      .order('created_at', { ascending: false })
+      .limit(10);
+    if (!data?.length) return;
+    const container = document.getElementById('announcements-container');
+    container.innerHTML = '';
+    data.forEach(ann => {
+      const el = document.createElement('div');
+      el.className = 'announcement-item';
+      const date = new Date(ann.created_at).toLocaleDateString('en-US', { month:'long', day:'numeric' });
+      el.innerHTML = `
+        ${ann.image_url ? `<img class="ann-image" src="${ann.image_url}" alt="">` : ''}
+        <div class="ann-content">
+          <div class="ann-date">${date}</div>
+          <div class="ann-title">${escHtml(ann.title)}</div>
+          <div class="ann-body">${escHtml(ann.body)}</div>
+          ${ann.youtube_url ? `<a href="${ann.youtube_url}" class="ann-yt-link">▶️ Watch on YouTube</a>` : ''}
+        </div>`;
+      container.appendChild(el);
+    });
+  } catch(e) { auditLog('warn', 'announcements_load', {detail: String(e || '').substring(0,200)}); }
+}
+
+async function loadPrayerWall() {
+  try {
+    const { data } = await db
+      .from('prayer_requests')
+      .select('*, members(full_name)')
+      .eq('request_type', 'public')
+      .eq('resolved', false)
+      .order('created_at', { ascending: false })
+      .limit(20);
+    if (!data?.length) return;
+    const wall = document.getElementById('prayer-wall-public');
+    wall.innerHTML = '';
+    data.forEach(req => {
+      const name = req.is_anonymous ? 'Anonymous' : (req.members?.full_name || 'Member');
+      const ago = timeAgo(req.created_at);
+      const el = document.createElement('div');
+      el.className = 'prayer-item';
+      el.setAttribute('data-id', req.id);
+      el.innerHTML = `
+        <div class="prayer-meta"><span class="prayer-name">${escHtml(name)}</span><span class="prayer-time">${ago}</span></div>
+        <div class="prayer-text">${escHtml(req.content)}</div>
+        <div class="prayer-actions">
+          <button class="pray-btn" onclick="prayForRequest(this)">🙏 I Prayed</button>
+          <span class="pray-count">🙏 <span class="count-num">${req.prayed_count || 0}</span> praying</span>
+        </div>`;
+      wall.appendChild(el);
+    });
+  } catch(e) { auditLog('warn', 'prayer_wall_load', {detail: String(e || '').substring(0,200)}); }
+}
+
+async function loadEvents() {
+  try {
+    const { data } = await db
+      .from('events')
+      .select('*')
+      .eq('is_public', true)
+      .gte('event_date', new Date().toISOString())
+      .order('event_date', { ascending: true })
+      .limit(10);
+    if (!data?.length) return;
+    const list = document.getElementById('events-list');
+    list.innerHTML = '';
+    data.forEach(ev => {
+      const d = new Date(ev.event_date);
+      const month = d.toLocaleDateString('en-US', { month:'short' }).toUpperCase();
+      const day = d.getDate();
+      const time = d.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
+      const el = document.createElement('div');
+      el.className = 'event-list-item';
+      el.innerHTML = `
+        <div class="event-date-box"><div class="ev-month">${month}</div><div class="ev-day">${day}</div></div>
+        <div class="event-info">
+          <div class="event-info-title">${escHtml(ev.title)}</div>
+          <div class="event-info-detail">${time}${ev.location ? ' · ' + escHtml(ev.location) : ''}</div>
+          <button class="remind-btn" onclick="setReminder(this,'${escHtml(ev.title)}')">🔔 Remind Me</button>
+        </div>`;
+      list.appendChild(el);
+    });
+  } catch(e) { auditLog('warn', 'events_load', {detail: String(e || '').substring(0,200)}); }
+}
+
+async function loadRoomMessages(room) {
+  try {
+    const { data } = await db
+      .from('messages')
+      .select('*, members(full_name)')
+      .eq('room', room)
+      .is('deleted_at', null)
+      .order('created_at', { ascending: true })
+      .limit(50);
+    if (!data?.length) return;
+    const wrap = document.getElementById('chat-messages');
+    wrap.innerHTML = '';
+    data.forEach(msg => {
+      const isOwn = msg.sender_id === APP.member?.id;
+      const initials = (msg.members?.full_name || 'M').split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
+      const time = new Date(msg.created_at).toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
+      const el = document.createElement('div');
+      el.className = 'chat-msg' + (isOwn ? ' own' : '');
+      el.innerHTML = `
+        <div class="chat-avatar">${initials}</div>
+        <div>
+          ${!isOwn ? `<div class="chat-name">${escHtml(msg.members?.full_name || 'Member')}</div>` : ''}
+          <div class="chat-bubble">${escHtml(msg.content)}<div class="chat-time">${time}</div></div>
+        </div>`;
+      wrap.appendChild(el);
+    });
+    wrap.scrollTop = wrap.scrollHeight;
+  } catch(e) { auditLog('warn', 'load_messages', {detail: String(e || '').substring(0,200)}); }
+}
+
+async function loadFeedPosts() {
+  try {
+    const { data } = await db
+      .from('feed_posts')
+      .select('*, members(full_name)')
+      .is('deleted_at', null)
+      .eq('reported', false)
+      .order('created_at', { ascending: false })
+      .limit(20);
+    if (!data?.length) return;
+    const container = document.getElementById('feed-posts-container');
+    container.innerHTML = '';
+    data.forEach(post => {
+      const initials = (post.members?.full_name || 'M').split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
+      const time = timeAgo(post.created_at);
+      const el = document.createElement('div');
+      el.className = 'feed-post';
+      el.setAttribute('data-id', post.id);
+      el.innerHTML = `
+        <div class="feed-post-header">
+          <div class="feed-avatar">${initials}</div>
+          <div><div class="feed-poster-name">${escHtml(post.members?.full_name || 'Member')}</div><div class="feed-post-time">${time}</div></div>
+        </div>
+        ${post.content ? `<div class="feed-post-content">${escHtml(post.content)}</div>` : ''}
+        ${post.media_url ? `<img class="feed-post-media" src="${post.media_url}" alt="">` : ''}
+        ${post.video_link ? `<div class="feed-post-content"><a href="${post.video_link}" style="color:var(--gold-light)">▶️ Watch Video</a></div>` : ''}
+        <div class="feed-post-actions">
+          <button class="feed-action-btn" onclick="toggleLike(this)">🤍 Like <span class="like-count">${post.like_count || 0}</span></button>
+          <button class="feed-action-btn">💬 Comment <span>${post.comment_count || 0}</span></button>
+          <button class="feed-action-btn" onclick="reportPost(this)">⚑ Report</button>
+        </div>`;
+      container.appendChild(el);
+    });
+  } catch(e) { auditLog('warn', 'feed_load', {detail: String(e || '').substring(0,200)}); }
+}
+
+function timeAgo(ts) {
+  const diff = Math.floor((Date.now() - new Date(ts)) / 1000);
+  if (diff < 60) return 'Just now';
+  if (diff < 3600) return Math.floor(diff/60) + 'm ago';
+  if (diff < 86400) return Math.floor(diff/3600) + 'h ago';
+  return Math.floor(diff/86400) + 'd ago';
+}
+
+/* ═══════════════════════════════════════════════════
+   PRAYER WALL
+═══════════════════════════════════════════════════ */
+function setPrayerType(type) {
+  APP.prayerType = type;
+  document.getElementById('prayer-public-btn').classList.toggle('active', type === 'public');
+  document.getElementById('prayer-private-btn').classList.toggle('active', type === 'private');
+}
+async function submitPrayer() {
+  const text = document.getElementById('prayer-input').value.trim();
+  if (!text) return;
+  const type = APP.prayerType;
+  const anon = document.getElementById('prayer-anon').checked;
+  try {
+    await db.from('prayer_requests').insert({
+      member_id: APP.member?.id || null,
+      request_type: type,
+      content: text,
+      is_anonymous: anon
+    });
+  } catch(e) { auditLog('warn', 'prayer_insert', {detail: String(e || '').substring(0,200)}); }
+  if (type === 'public') {
+    const wall = document.getElementById('prayer-wall-public');
+    const item = document.createElement('div');
+    item.className = 'prayer-item';
+    item.innerHTML = `
+      <div class="prayer-meta"><span class="prayer-name">${anon ? 'Anonymous' : (APP.member?.full_name || 'Member')}</span><span class="prayer-time">Just now</span></div>
+      <div class="prayer-text">${escHtml(text)}</div>
+      <div class="prayer-actions">
+        <button class="pray-btn" onclick="prayForRequest(this)">🙏 I Prayed</button>
+        <span class="pray-count">🙏 <span class="count-num">0</span> praying</span>
+      </div>`;
+    wall.prepend(item);
+  }
+  document.getElementById('prayer-input').value = '';
+  const toast = document.getElementById('prayer-toast');
+  toast.className = 'toast show';
+  toast.textContent = type === 'private'
+    ? '🔒 Sent privately to Pastor Shan and the intercessory team.'
+    : '🙏 Your prayer request is now on the public wall.';
+  setTimeout(() => toast.classList.remove('show'), 3500);
+}
+async function prayForRequest(btn) {
+  if (btn.classList.contains('prayed')) return;
+  btn.classList.add('prayed');
+  btn.textContent = '🙏 Praying!';
+  const countEl = btn.parentElement.querySelector('.count-num');
+  if (countEl) countEl.textContent = parseInt(countEl.textContent) + 1;
+  const prayerId = btn.closest('[data-id]')?.getAttribute('data-id');
+  if (!prayerId || !APP.member?.id) return;
+  try {
+    await db.from('prayer_prayed').upsert({ prayer_id: prayerId, member_id: APP.member.id });
+    await db.from('prayer_requests').update({ prayed_count: parseInt(countEl?.textContent || 0) }).eq('id', prayerId);
+  } catch(e) { auditLog('warn', 'pray_for', {detail: String(e || '').substring(0,200)}); }
+}
+
+/* ═══════════════════════════════════════════════════
+   COMMUNITY FEED
+═══════════════════════════════════════════════════ */
+function setComposeType(btn, type) {
+  APP.composeType = type;
+  document.querySelectorAll('.compose-type-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('media-upload').style.display = type === 'photo' ? 'block' : 'none';
+  document.getElementById('video-link-input').style.display = type === 'video' ? 'block' : 'none';
+  if (type === 'photo' || type === 'video') document.getElementById('media-upload').click();
+}
+function handleMediaUpload(input) {
+  if (input.files.length > 0) {
+    const file = input.files[0];
+    if (file.type.startsWith('video') && file.size > 50 * 1024 * 1024) {
+      alert('Video is too large. Please keep videos under 50MB (approx. 1-2 minutes).');
+      input.value = '';
+    }
+  }
+}
+async function submitPost() {
+  const text = document.getElementById('compose-text').value.trim();
+  const videoLink = document.getElementById('video-link-input').value.trim();
+  if (!text && APP.composeType === 'text') return;
+  const member = APP.member;
+  try {
+    await db.from('feed_posts').insert({
+      member_id: member.id,
+      post_type: APP.composeType,
+      content: text || null,
+      video_link: videoLink || null
+    });
+  } catch(e) { auditLog('warn', 'feed_post', {detail: String(e || '').substring(0,200)}); }
+  document.getElementById('compose-text').value = '';
+  document.getElementById('video-link-input').value = '';
+  loadFeedPosts();
+}
+function toggleLike(btn) {
+  const liked = btn.classList.toggle('liked');
+  btn.querySelector('.like-count').textContent = parseInt(btn.querySelector('.like-count').textContent) + (liked ? 1 : -1);
+  btn.innerHTML = (liked ? '❤️' : '🤍') + ' Like <span class="like-count">' + btn.querySelector('.like-count').textContent + '</span>';
+}
+function showComments(btn) {
+  alert('Comments — wire to feed_comments table in Supabase.');
+}
+function reportPost(btn) {
+  if (confirm('Report this post to the admin team?')) {
+    btn.textContent = '⚑ Reported';
+    btn.style.color = '#fca5a5';
+    // TODO: supabase update feed_posts set reported=true
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   CALENDAR
+═══════════════════════════════════════════════════ */
+function buildCalendar() {
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('cal-month-label').textContent = months[APP.calMonth] + ' ' + APP.calYear;
+  const grid = document.getElementById('cal-grid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach(d => {
+    const el = document.createElement('div');
+    el.className = 'cal-day-label';
+    el.textContent = d;
+    grid.appendChild(el);
+  });
+  const first = new Date(APP.calYear, APP.calMonth, 1).getDay();
+  const days = new Date(APP.calYear, APP.calMonth + 1, 0).getDate();
+  const today = new Date();
+  for (let i = 0; i < first; i++) {
+    const el = document.createElement('div');
+    el.className = 'cal-day other-month';
+    grid.appendChild(el);
+  }
+  for (let d = 1; d <= days; d++) {
+    const el = document.createElement('div');
+    el.className = 'cal-day';
+    el.textContent = d;
+    if (d % 7 === 1) el.classList.add('has-event'); // demo: Sundays have events
+    if (d === today.getDate() && APP.calMonth === today.getMonth() && APP.calYear === today.getFullYear()) el.classList.add('today');
+    el.onclick = () => showDayEvents(d);
+    grid.appendChild(el);
+  }
+}
+function calNav(dir) {
+  APP.calMonth += dir;
+  if (APP.calMonth > 11) { APP.calMonth = 0; APP.calYear++; }
+  if (APP.calMonth < 0) { APP.calMonth = 11; APP.calYear--; }
+  buildCalendar();
+}
+function showDayEvents(d) {
+  // TODO: query events table for this date
+}
+
+/* ═══════════════════════════════════════════════════
+   REMINDERS
+═══════════════════════════════════════════════════ */
+function setReminder(btn, eventName) {
+  if ('Notification' in window) {
+    Notification.requestPermission().then(perm => {
+      if (perm === 'granted') {
+        btn.classList.add('set');
+        btn.textContent = '✅ Reminder Set';
+        new Notification('DCC Reminder Set', { body: 'We\'ll remind you about: ' + eventName });
+      }
+    });
+  } else {
+    btn.classList.add('set');
+    btn.textContent = '✅ Reminder Set';
+  }
+  // TODO: insert into event_reminders table
+}
+
+/* ═══════════════════════════════════════════════════
+   GIVING
+═══════════════════════════════════════════════════ */
+function copyToClip(text, msg) {
+  navigator.clipboard.writeText(text).catch(() => {});
+  const toast = document.getElementById('copy-toast');
+  toast.textContent = '✅ ' + msg;
+  toast.className = 'toast show';
+  setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+/* ═══════════════════════════════════════════════════
+   CONNECT CARD
+═══════════════════════════════════════════════════ */
+async function submitConnectCard() {
+  const name = document.getElementById('cc-name').value.trim();
+  if (!name) { alert('Please enter your name.'); return; }
+  try {
+    await db.from('connect_cards').insert({
+      full_name: name,
+      email: document.getElementById('cc-email').value.trim() || null,
+      phone: document.getElementById('cc-phone').value.trim() || null,
+      visit_type: document.getElementById('cc-visit').value || null,
+      prayer_request: document.getElementById('cc-prayer').value.trim() || null
+    });
+  } catch(e) { auditLog('warn', 'connect_card_insert', {detail: String(e || '').substring(0,200)}); }
+  document.getElementById('connect-card-form').style.opacity = '0.3';
+  document.getElementById('connect-card-form').style.pointerEvents = 'none';
+  document.getElementById('cc-toast').classList.add('show');
+}
+function submitGuestPrayer() {
+  const text = document.getElementById('guest-prayer').value.trim();
+  if (!text) return;
+  const toast = document.getElementById('guest-prayer-toast');
+  toast.className = 'toast show';
+  document.getElementById('guest-prayer').value = '';
+  setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+/* ═══════════════════════════════════════════════════
+   NOTIFICATIONS
+═══════════════════════════════════════════════════ */
+function toggleNotifPanel() {
+  const panel = document.getElementById('notif-panel');
+  panel.classList.toggle('open');
+  if (panel.classList.contains('open')) {
+    document.getElementById('notif-badge').classList.remove('show');
+    APP.unreadCount = 0;
+  }
+}
+function updateNotifBadge() {
+  const badge = document.getElementById('notif-badge');
+  badge.classList.add('show');
+}
+document.addEventListener('click', e => {
+  const panel = document.getElementById('notif-panel');
+  if (panel?.classList.contains('open') && !panel.contains(e.target) && !e.target.closest('.notif-btn')) {
+    panel.classList.remove('open');
+  }
+});
+
+/* ═══════════════════════════════════════════════════
+   UTILS
+═══════════════════════════════════════════════════ */
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ═══════════════════════════════════════════════════
+   CLAUDE-IN-CLAUDE ENGINE
+   Model: Haiku (cost-controlled, cached governance)
+   Governance covenant wraps every single call.
+   One place to edit — everything inherits it.
+═══════════════════════════════════════════════════ */
+
+// ── MODEL SELECTION ──────────────────────────────
+// Haiku = cost-controlled for high-frequency in-app calls
+// Sonnet = reserved for pastoral report + sermon topics only
+const CLAUDE_HAIKU  = 'claude-haiku-4-5-20251001';
+const CLAUDE_SONNET = 'claude-sonnet-4-20250514';
+
+// ── DCC GOVERNANCE COVENANT ──────────────────────
+// This block is the law of the app.
+// Every Claude call inherits these boundaries.
+// Edit ONLY here — never in individual functions.
+const DCC_GOVERNANCE = `
+IDENTITY
+You are the embedded AI ministry assistant inside the Dominion City Church (DCC) app in Navasota, TX.
+Pastor Shan E. Davis is the lead pastor. You serve him, his leadership team, and his congregation.
+
+CHURCH PROFILE
+- Mission: Pray for mankind, prepare believers for their purpose, propel them forward
+- Vision: Help people become everything God has ordained them to be
+- Tagline: "We put the DO in Dominion"
+- Spiritual flow: Prophetic and Apostolic
+- Congregation: Diverse — all backgrounds, denominations, ethnicities, gathered in the name of Jesus
+- Core values: Pursuing Godly Maturity · Praying for All Men · Serving the Community
+- Key scripture: Jeremiah 31:3
+- Youth ministry: beYOUtiful Empowerment
+- Location: Navasota, TX 77868 (small city, rural Grimes County)
+
+VOICE & TONE
+- Lead with the love of God — always capitalize "God," never write "god"
+- Write in a bold, faith-grounded, Kingdom-focused, prophetic-apostolic voice
+- Be encouraging, specific, and Spirit-led — not generic or corporate
+- Do not water down the Gospel to make it comfortable or politically palatable
+- Do not over-whitewash — the Gospel has edges; honor them
+- Do not lean so far left that you tank the truth of Scripture
+
+HARD DOCTRINAL BOUNDARIES — NEVER VIOLATE
+- Do NOT reference, quote, or draw from Catholic doctrine, Catholic saints, or Catholic tradition
+- Do NOT reference Jewish religious tradition, Jewish law, or Rabbinic teaching as spiritual authority
+- Do NOT include anything obscene, sexually suggestive, violent, or inappropriate for a church community
+- Do NOT introduce New Age, occult, or mystical practices not rooted in Scripture
+- Do NOT suggest ecumenical compromise that dilutes the Gospel of Jesus Christ
+- Do NOT soften biblical truth to avoid offense — speak the truth in love (Ephesians 4:15)
+
+SCRIPTURE
+- Use KJV as the primary translation unless otherwise specified
+- Always cite reference after the verse (e.g., — Romans 8:28)
+- Only quote Scripture that is contextually accurate — do not misapply verses
+
+OUTPUT RULES
+- Be concise and actionable
+- Format cleanly — no unnecessary filler phrases
+- When generating JSON, return ONLY valid JSON with no markdown, no backticks, no preamble
+`.trim();
+
+// ── CACHE LAYER ──────────────────────────────────
+// Caches repeated prompts in sessionStorage.
+// Identical prompts skip the API — free repeat calls.
+const DCC_CACHE = {
+  get(key) {
+    try { const v = sessionStorage.getItem('dcc_ai_'+btoa(key).slice(0,40)); return v ? JSON.parse(v) : null; } catch(e) { return null; }
+  },
+  set(key, value) {
+    try { sessionStorage.setItem('dcc_ai_'+btoa(key).slice(0,40), JSON.stringify(value)); } catch(e) {}
+  }
+};
+
+// ── PROXY URL ────────────────────────────────────
+const DCC_PROXY = `${CONFIG.supabaseUrl}/functions/v1/dcc-ai-proxy`;
+
+// Church context sent with every call — proxy builds governance from it
+function getChurchContext() {
+  return {
+    churchName:    CONFIG.churchName,
+    pastor:        CONFIG.pastor,
+    city:          CONFIG.city,
+    state:         CONFIG.state,
+    zip:           CONFIG.zip,
+    mission:       CONFIG.mission,
+    vision:        CONFIG.vision,
+    tagline:       CONFIG.tagline,
+    spiritualFlow: CONFIG.spiritualFlow,
+    coreValues:    CONFIG.coreValues,
+    foundingVerse: CONFIG.foundingVerse,
+    youthMinistry: CONFIG.youthMinistry
+  };
+}
+
+async function claudeCall(prompt, callType, systemOverride, useSonnet) {
+  try {
+    const res = await fetch(DCC_PROXY, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${CONFIG.supabaseKey}`
+      },
+      body: JSON.stringify({
+        prompt,
+        call_type:      callType || 'default',
+        system_override: systemOverride || null,
+        use_sonnet:     useSonnet || false,
+        church_context: getChurchContext()
+      })
+    });
+    const data = await res.json();
+    if (data.error) { auditLog('warn', 'dcc_proxy_error', {detail: String(e || '').substring(0,200)}); return ''; }
+    return data.text || '';
+  } catch(e) {
+    auditLog('warn', 'dcc_proxy_call_failed', {detail: String(e || '').substring(0,200)});
+    return '';
+  }
+}
+
+/* ── 1. WEEKLY QOTW GENERATOR ──────────────────────
+   Runs on Monday. Generates all 9 ministry room
+   questions and writes to weekly_questions table.
+─────────────────────────────────────────────────── */
+async function generateWeeklyQOTW() {
+  const el = document.getElementById('qotw-gen-status');
+  if (el) { el.textContent = 'Generating...'; el.className = 'ai-status thinking'; }
+
+  const rooms = Object.entries(ROOMS);
+  const weekStart = getMonday();
+  let generated = 0;
+
+  for (const [key, room] of rooms) {
+    try {
+      const text = await claudeCall(
+        `Generate ONE weekly discussion question for the ${room.name} at Dominion City Church in Navasota TX. 
+         The question should be spiritually challenging, specific to this ministry's role, and encourage 
+         personal reflection and Kingdom action. Return ONLY the question text, no preamble, no quotes.`,
+        'qotw'
+      );
+      const clean = text.trim().replace(/^["']|["']$/g, '');
+      await db.from('weekly_questions').upsert({
+        room: key,
+        week_start: weekStart,
+        question: clean
+      }, { onConflict: 'room,week_start' });
+      generated++;
+      if (el) el.textContent = `Generated ${generated}/${rooms.length}...`;
+    } catch(e) { auditLog('warn', 'qotw_gen_error', {detail: String(e || '').substring(0,200)}); }
+  }
+
+  if (el) { el.textContent = `✓ All ${generated} questions generated`; el.className = 'ai-status done'; }
+  // Reload current room QOTW if open
+  if (APP.currentRoom) loadQOTW(APP.currentRoom);
+  return generated;
+}
+
+/* ── 2. ANNOUNCEMENT DRAFT WRITER ─────────────────
+   Claude reads upcoming events and writes draft
+   announcements for Pastor Shan to review/approve.
+─────────────────────────────────────────────────── */
+async function generateAnnouncementDrafts() {
+  const container = document.getElementById('ann-drafts-container');
+  if (!container) return;
+  container.innerHTML = '<div class="ai-status thinking">✦ Claude is drafting announcements...</div>';
+
+  try {
+    const { data: events } = await db
+      .from('events').select('*')
+      .gte('event_date', new Date().toISOString())
+      .order('event_date', { ascending: true })
+      .limit(5);
+
+    const { data: recent_cards } = await db
+      .from('connect_cards').select('count')
+      .gte('created_at', new Date(Date.now() - 7*24*60*60*1000).toISOString());
+
+    const eventList = events?.length
+      ? events.map(e => `- ${e.title} on ${new Date(e.event_date).toLocaleDateString()}`).join('\n')
+      : 'No upcoming events in database yet.';
+
+    const draft = await claudeCall(
+      `Write 2 church announcement drafts for Dominion City Church in Navasota TX this week.
+       Upcoming events:\n${eventList}
+       Write in Pastor Shan's warm, Kingdom-focused voice.
+       Format as JSON array: [{"title":"...","body":"..."},{"title":"...","body":"..."}]
+       Return ONLY the JSON, no markdown, no preamble.`,
+      'announcement'
+    );
+
+    let drafts = [];
+    try { drafts = JSON.parse(draft.replace(/```json|```/g,'')); } catch(e) { drafts = []; }
+
+    container.innerHTML = '';
+    if (!drafts.length) {
+      container.innerHTML = '<div class="ai-status">No drafts generated. Try again.</div>';
+      return;
+    }
+
+    drafts.forEach((d, i) => {
+      const el = document.createElement('div');
+      el.className = 'ann-draft-card';
+      el.innerHTML = `
+        <div class="ann-draft-label">✦ AI Draft ${i+1}</div>
+        <div class="ann-draft-title" contenteditable="true">${escHtml(d.title)}</div>
+        <div class="ann-draft-body" contenteditable="true">${escHtml(d.body)}</div>
+        <div class="ann-draft-actions">
+          <button class="btn-gold" style="font-size:11px;padding:8px 16px" onclick="approveAnnouncement(this)">✓ Approve & Publish</button>
+          <button class="btn-outline" style="font-size:11px;padding:8px 16px" onclick="this.closest('.ann-draft-card').remove()">✕ Discard</button>
+        </div>`;
+      container.appendChild(el);
+    });
+  } catch(e) {
+    container.innerHTML = '<div class="ai-status error">Error generating drafts. Check connection.</div>';
+    auditLog('warn', 'ann_drafts_error', {detail: String(e || '').substring(0,200)});
+  }
+}
+
+async function approveAnnouncement(btn) {
+  const card = btn.closest('.ann-draft-card');
+  const title = card.querySelector('.ann-draft-title').textContent.trim();
+  const body = card.querySelector('.ann-draft-body').textContent.trim();
+  try {
+    await db.from('announcements').insert({
+      title, body,
+      published: true,
+      created_by: APP.member?.id || null
+    });
+    card.innerHTML = '<div class="ai-status done">✓ Published to announcements</div>';
+    setTimeout(() => { card.remove(); loadAnnouncements(); }, 2000);
+  } catch(e) { auditLog('warn', 'approve_ann', {detail: String(e || '').substring(0,200)}); }
+}
+
+/* ── 3. OUTREACH SUGGESTER ─────────────────────────
+   Claude analyzes connect cards + community data
+   and generates targeted outreach ideas for Navasota.
+─────────────────────────────────────────────────── */
+async function generateOutreachSuggestions() {
+  const container = document.getElementById('outreach-suggestions-container');
+  if (!container) return;
+  container.innerHTML = '<div class="ai-status thinking">✦ Analyzing community and generating outreach ideas...</div>';
+
+  try {
+    const { data: cards } = await db
+      .from('connect_cards').select('visit_type, created_at')
+      .order('created_at', { ascending: false }).limit(20);
+
+    const visitTypes = cards?.map(c => c.visit_type).filter(Boolean) || [];
+    const firstTimers = visitTypes.filter(v => v.toLowerCase().includes('first')).length;
+
+    const suggestions = await claudeCall(
+      `Generate 4 specific, actionable outreach ideas for Dominion City Church in Navasota, TX.
+       Context: ${firstTimers} first-time visitors in recent connect cards.
+       Navasota TX is a small city (pop ~8,000) in Grimes County, rural Texas.
+       Focus on: community presence, local partnerships, digital reach, and youth engagement.
+       Format as JSON array: [{"title":"...","description":"...","effort":"Low|Medium|High","impact":"..."}]
+       Return ONLY the JSON, no markdown, no preamble.`,
+      'outreach'
+    );
+
+    let ideas = [];
+    try { ideas = JSON.parse(suggestions.replace(/```json|```/g,'')); } catch(e) { ideas = []; }
+
+    container.innerHTML = '';
+    if (!ideas.length) {
+      container.innerHTML = '<div class="ai-status">No suggestions generated.</div>';
+      return;
+    }
+
+    ideas.forEach(idea => {
+      const el = document.createElement('div');
+      el.className = 'outreach-idea-card';
+      const effortColor = idea.effort === 'Low' ? '#86efac' : idea.effort === 'High' ? '#fca5a5' : '#fde68a';
+      el.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div style="font-family:var(--font-display);font-size:13px;color:var(--gold-light)">${escHtml(idea.title)}</div>
+          <span style="font-size:10px;padding:3px 8px;border-radius:10px;background:rgba(0,0,0,0.3);color:${effortColor}">${escHtml(idea.effort)} effort</span>
+        </div>
+        <div style="font-size:13px;line-height:1.6;color:rgba(255,255,255,0.8);margin-bottom:6px">${escHtml(idea.description)}</div>
+        <div style="font-size:11px;color:var(--gold)">Impact: ${escHtml(idea.impact)}</div>`;
+      container.appendChild(el);
+    });
+  } catch(e) {
+    container.innerHTML = '<div class="ai-status error">Error generating suggestions.</div>';
+    auditLog('warn', 'outreach_error', {detail: String(e || '').substring(0,200)});
+  }
+}
+
+/* ── 4. DAILY SCRIPTURE GENERATOR ─────────────────
+   Claude generates 30 days of scripture and writes
+   to daily_scripture table. Stays always ahead.
+─────────────────────────────────────────────────── */
+async function generateDailyScripture() {
+  const el = document.getElementById('scripture-gen-status');
+  if (el) { el.textContent = 'Generating 30 days of scripture...'; el.className = 'ai-status thinking'; }
+
+  try {
+    const raw = await claudeCall(
+      `Generate 30 daily scriptures for Dominion City Church. Focus on themes of dominion, authority, 
+       purpose, faith, healing, provision, and community. Use KJV translation.
+       Return ONLY a JSON array of 30 objects:
+       [{"date_offset":1,"reference":"Book Chapter:Verse","verse":"full verse text"}]
+       Date offset 1 = tomorrow. No markdown, no preamble, only the JSON array.`
+    );
+
+    let scriptures = [];
+    try { scriptures = JSON.parse(raw.replace(/```json|```/g,'')); } catch(e) {}
+
+    let inserted = 0;
+    for (const s of scriptures) {
+      const d = new Date();
+      d.setDate(d.getDate() + (s.date_offset || 0));
+      const display_date = d.toISOString().split('T')[0];
+      try {
+        await db.from('daily_scripture').upsert(
+          { display_date, reference: s.reference, verse: s.verse, translation: 'KJV' },
+          { onConflict: 'display_date' }
+        );
+        inserted++;
+      } catch(e) {}
+    }
+
+    if (el) { el.textContent = `✓ ${inserted} scriptures written to database`; el.className = 'ai-status done'; }
+    loadScripture();
+  } catch(e) {
+    if (el) { el.textContent = 'Error generating scripture.'; el.className = 'ai-status error'; }
+    auditLog('warn', 'scripture_gen', {detail: String(e || '').substring(0,200)});
+  }
+}
+
+/* ── 5. FEED MODERATION ───────────────────────────
+   Claude reads recent feed posts and flags anything
+   needing pastoral attention. Silent — admin only.
+─────────────────────────────────────────────────── */
+async function moderateFeed() {
+  try {
+    const { data: posts } = await db
+      .from('feed_posts')
+      .select('id, content, members(full_name)')
+      .is('deleted_at', null)
+      .eq('reported', false)
+      .order('created_at', { ascending: false })
+      .limit(20);
+
+    if (!posts?.length) return;
+
+    const postList = posts
+      .filter(p => p.content)
+      .map(p => `ID:${p.id} | ${p.members?.full_name || 'Member'}: ${p.content.substring(0,150)}`)
+      .join('\n');
+
+    const result = await claudeCall(
+      `You are a pastoral content moderator for Dominion City Church. Review these recent community feed posts and identify any that need pastoral attention — posts showing spiritual distress, crisis, inappropriate content, or that would benefit from a pastor's response.
+       Posts:\n${postList}
+       Return ONLY a JSON array of flagged post IDs with reason:
+       [{"id":"...","reason":"...","urgency":"low|medium|high"}]
+       If nothing needs attention, return empty array: []
+       No markdown, no preamble, only JSON.`,
+      'moderation'
+    );
+
+    let flagged = [];
+    try { flagged = JSON.parse(result.replace(/```json|```/g,'')); } catch(e) {}
+
+    const container = document.getElementById('feed-flags-container');
+    if (!container || !flagged.length) return;
+
+    container.innerHTML = '';
+    flagged.forEach(f => {
+      const post = posts.find(p => p.id === f.id);
+      if (!post) return;
+      const urgencyColor = f.urgency === 'high' ? '#fca5a5' : f.urgency === 'medium' ? '#fde68a' : '#86efac';
+      const el = document.createElement('div');
+      el.className = 'feed-flag-item';
+      el.innerHTML = `
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+          <span style="font-size:12px;font-weight:700;color:var(--white)">${escHtml(post.members?.full_name || 'Member')}</span>
+          <span style="font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(0,0,0,0.3);color:${urgencyColor}">${f.urgency} urgency</span>
+        </div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.7);margin-bottom:6px">"${escHtml(post.content?.substring(0,100) || '')}..."</div>
+        <div style="font-size:11px;color:var(--gold)">⚑ ${escHtml(f.reason)}</div>`;
+      container.appendChild(el);
+    });
+
+    // Show badge on admin panel if there are flags
+    const flagBadge = document.getElementById('feed-flag-badge');
+    if (flagBadge && flagged.length) {
+      flagBadge.textContent = flagged.length;
+      flagBadge.style.display = 'inline-flex';
+    }
+  } catch(e) { auditLog('warn', 'feed_moderation', {detail: String(e || '').substring(0,200)}); }
+}
+
+/* ── 6. WEEKLY PASTORAL REPORT ────────────────────
+   Claude compiles engagement data into a clean
+   weekly report for Pastor Shan's dashboard.
+─────────────────────────────────────────────────── */
+async function generatePastoralReport() {
+  const container = document.getElementById('pastoral-report-container');
+  if (!container) return;
+  container.innerHTML = '<div class="ai-status thinking">✦ Compiling your weekly pastoral report...</div>';
+
+  try {
+    const since = new Date(Date.now() - 7*24*60*60*1000).toISOString();
+
+    const [cards, prayers, posts] = await Promise.all([
+      db.from('connect_cards').select('*').gte('created_at', since),
+      db.from('prayer_requests').select('*').gte('created_at', since),
+      db.from('feed_posts').select('*').gte('created_at', since).is('deleted_at', null)
+    ]);
+
+    const newVisitors = cards.data?.length || 0;
+    const firstTimers = cards.data?.filter(c => c.visit_type?.toLowerCase().includes('first')).length || 0;
+    const prayerCount = prayers.data?.length || 0;
+    const privatePrayers = prayers.data?.filter(p => p.request_type === 'private').length || 0;
+    const feedPosts = posts.data?.length || 0;
+
+    const report = await claudeCall(
+      `Write a brief, warm weekly pastoral report for Pastor Shan E. Davis of Dominion City Church.
+       This week's data:
+       - Connect cards received: ${newVisitors} (${firstTimers} first-time visitors)
+       - Prayer requests: ${prayerCount} total (${privatePrayers} private/confidential)
+       - Community feed posts: ${feedPosts}
+       
+       Write 3-4 short paragraphs: (1) celebration/gratitude for the week, (2) specific pastoral observations, (3) recommended focus areas for next week, (4) a closing scripture encouragement.
+       Write directly to Pastor Shan, warm and Kingdom-focused. Under 300 words.`,
+      'pastoral', null, true
+    );
+
+    container.innerHTML = `
+      <div style="background:rgba(201,149,42,0.06);border:1px solid rgba(201,149,42,0.2);border-radius:var(--radius-sm);padding:16px">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px">
+          <div style="text-align:center;padding:12px 8px;background:rgba(255,255,255,0.04);border-radius:8px">
+            <div style="font-size:24px;font-weight:700;color:var(--gold-light)">${newVisitors}</div>
+            <div style="font-size:10px;color:var(--text-muted);letter-spacing:1px">CONNECT CARDS</div>
+          </div>
+          <div style="text-align:center;padding:12px 8px;background:rgba(255,255,255,0.04);border-radius:8px">
+            <div style="font-size:24px;font-weight:700;color:var(--gold-light)">${prayerCount}</div>
+            <div style="font-size:10px;color:var(--text-muted);letter-spacing:1px">PRAYER REQUESTS</div>
+          </div>
+          <div style="text-align:center;padding:12px 8px;background:rgba(255,255,255,0.04);border-radius:8px">
+            <div style="font-size:24px;font-weight:700;color:var(--gold-light)">${feedPosts}</div>
+            <div style="font-size:10px;color:var(--text-muted);letter-spacing:1px">FEED POSTS</div>
+          </div>
+        </div>
+        <div style="font-size:14px;line-height:1.8;color:rgba(255,255,255,0.85)">${report.replace(/\n\n/g,'<br><br>').replace(/\*\*(.+?)\*\*/g,'<strong style="color:var(--gold-light)">$1</strong>')}</div>
+      </div>`;
+  } catch(e) {
+    container.innerHTML = '<div class="ai-status error">Error generating report.</div>';
+    auditLog('warn', 'pastoral_report', {detail: String(e || '').substring(0,200)});
+  }
+}
+
+/* ── 7. SERMON TOPIC SUGGESTER ────────────────────
+   Pastor Davis panel ONLY.
+   Claude reads prayer requests + feed to surface
+   what the congregation needs to hear.
+─────────────────────────────────────────────────── */
+async function generateSermonTopics() {
+  const container = document.getElementById('sermon-topics-container');
+  if (!container) return;
+  container.innerHTML = '<div class="ai-status thinking">✦ Reading the congregation\'s heart...</div>';
+
+  try {
+    const { data: prayers } = await db
+      .from('prayer_requests')
+      .select('content, request_type')
+      .eq('request_type', 'public')
+      .order('created_at', { ascending: false })
+      .limit(30);
+
+    const { data: posts } = await db
+      .from('feed_posts')
+      .select('content')
+      .is('deleted_at', null)
+      .order('created_at', { ascending: false })
+      .limit(20);
+
+    const prayerThemes = prayers?.map(p => p.content.substring(0, 100)).join(' | ') || 'No recent prayers';
+    const feedThemes = posts?.filter(p => p.content).map(p => p.content.substring(0, 80)).join(' | ') || 'No recent posts';
+
+    const topics = await claudeCall(
+      `Analyze the spiritual pulse of the congregation based on their prayer requests and community posts.
+       
+       Recent prayer themes: ${prayerThemes}
+       Recent community posts: ${feedThemes}
+       
+       Suggest 4 sermon topic ideas that would directly minister to what this congregation is experiencing.
+       For each topic, provide: title, key scripture, 2-sentence description of the need it addresses.
+       
+       Format as JSON: [{"title":"...","scripture":"...","description":"...","series_potential":"yes|no"}]
+       Return ONLY the JSON, no markdown, no preamble.`,
+      'sermon_topics',
+      'You are speaking privately to Pastor Shan E. Davis only. These sermon suggestions are based on the confidential spiritual patterns you observe in his congregation. Be pastoral, prophetic, and specific.',
+      true
+    );
+
+    let suggestions = [];
+    try { suggestions = JSON.parse(topics.replace(/```json|```/g,'')); } catch(e) {}
+
+    container.innerHTML = '';
+    if (!suggestions.length) {
+      container.innerHTML = '<div class="ai-status">No topics generated. More congregation data needed.</div>';
+      return;
+    }
+
+    suggestions.forEach((s, i) => {
+      const el = document.createElement('div');
+      el.className = 'sermon-topic-card';
+      el.innerHTML = `
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px">
+          <div>
+            <div style="font-family:var(--font-display);font-size:14px;color:var(--gold-light);margin-bottom:3px">${escHtml(s.title)}</div>
+            <div style="font-size:12px;color:var(--gold);font-style:italic">${escHtml(s.scripture)}</div>
+          </div>
+          ${s.series_potential === 'yes' ? '<span style="font-size:9px;padding:3px 8px;background:rgba(107,53,184,0.3);border:1px solid rgba(107,53,184,0.5);border-radius:10px;color:#c4b5fd;white-space:nowrap">Series potential</span>' : ''}
+        </div>
+        <div style="font-size:13px;line-height:1.6;color:rgba(255,255,255,0.8)">${escHtml(s.description)}</div>`;
+      container.appendChild(el);
+    });
+  } catch(e) {
+    container.innerHTML = '<div class="ai-status error">Error generating sermon topics.</div>';
+    auditLog('warn', 'sermon_topics', {detail: String(e || '').substring(0,200)});
+  }
+}
+
+/* ── PASTOR DASHBOARD LAUNCHER ────────────────────
+   Shows Pastor Davis's full AI panel.
+   Only renders if member.status === 'leadership'
+   or member.is_admin === true.
+─────────────────────────────────────────────────── */
+function openPastorDashboard() {
+  const member = APP.member;
+  if (!member || (member.status !== 'leadership' && !member.is_admin)) return;
+
+  const panel = document.getElementById('pastor-dashboard-panel');
+  if (!panel) return;
+  panel.style.display = 'block';
+
+  // Auto-run on open
+  generateAnnouncementDrafts();
+  generateOutreachSuggestions();
+  generatePastoralReport();
+  generateSermonTopics();
+  moderateFeed();
+}
+
+/* ── AUTO-RUN ENGINE ──────────────────────────────
+   On app launch:
+   - Always generate QOTW if it's Monday
+   - Always check if scripture needs refreshing
+   - Leadership: auto-moderate feed silently
+─────────────────────────────────────────────────── */
+async function runClaudeEngine() {
+  const today = new Date();
+
+  // QOTW — generate every Monday
+  if (today.getDay() === 1) {
+    const weekStart = getMonday();
+    const { data } = await db
+      .from('weekly_questions')
+      .select('id')
+      .eq('week_start', weekStart)
+      .limit(1);
+    if (!data?.length) generateWeeklyQOTW();
+  }
+
+  // Scripture — generate next 30 days if fewer than 7 ahead exist
+  const future = new Date(today);
+  future.setDate(future.getDate() + 7);
+  const { data: upcoming } = await db
+    .from('daily_scripture')
+    .select('id')
+    .gte('display_date', today.toISOString().split('T')[0])
+    .lte('display_date', future.toISOString().split('T')[0]);
+  if (!upcoming || upcoming.length < 5) generateDailyScripture();
+
+  // Feed moderation — run silently for leadership
+  if (APP.member?.status === 'leadership' || APP.member?.is_admin) {
+    moderateFeed();
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   IN-APP DIAGNOSTICS
+   Runs inside the Pastor Dashboard.
+   Lightweight checks — full suite in dcc-tests.html.
+═══════════════════════════════════════════════════ */
+async function runInAppDiagnostics() {
+  const btn = document.getElementById('diag-run-btn');
+  const results = document.getElementById('diag-results');
+  btn.textContent = '⟳ Running...';
+  btn.disabled = true;
+  results.innerHTML = '';
+
+  let pass = 0, fail = 0;
+
+  function check(label, ok, detail = '') {
+    const color = ok ? '#22c55e' : '#ef4444';
+    const icon  = ok ? '✓' : '✗';
+    results.innerHTML += `<div style="padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;gap:10px">
+      <span style="color:${color};flex-shrink:0">${icon}</span>
+      <span style="color:${ok ? '#ccc' : '#fca5a5'}">${label}</span>
+      ${detail ? `<span style="color:#666;font-size:11px;margin-left:auto">${detail}</span>` : ''}
+    </div>`;
+    if (ok) pass++; else fail++;
+  }
+
+  const checks = [
+    // Database tables
+    async () => {
+      const tables = ['members','messages','prayer_requests','announcements',
+        'feed_posts','events','daily_scripture','weekly_questions',
+        'connect_cards','audit_log','ai_response_cache'];
+      for (const t of tables) {
+        const { error } = await db.from(t).select('id').limit(1);
+        const ok = !error || error.code === 'PGRST301';
+        check(`Table: ${t}`, ok, ok ? 'OK' : error?.message?.substring(0,40));
+      }
+    },
+    // RLS — private prayers hidden
+    async () => {
+      const { data } = await db.from('prayer_requests').select('id').eq('request_type','private');
+      check('RLS: private prayers hidden from anon', !data?.length, !data?.length ? 'protected' : `${data.length} exposed`);
+    },
+    // RLS — finance messages hidden
+    async () => {
+      const { data } = await db.from('messages').select('id').eq('room','finance');
+      check('RLS: finance room hidden from anon', !data?.length, !data?.length ? 'protected' : `${data.length} exposed`);
+    },
+    // Scripture today
+    async () => {
+      const today = new Date().toISOString().split('T')[0];
+      const { data } = await db.from('daily_scripture').select('reference').eq('display_date', today).single();
+      check("Today's scripture exists", !!data?.reference, data?.reference || 'MISSING — run generator');
+    },
+    // Edge function proxy
+    async () => {
+      try {
+        const res = await fetch(`${CONFIG.supabaseUrl}/functions/v1/dcc-ai-proxy`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${CONFIG.supabaseKey}` },
+          body: JSON.stringify({ prompt: 'ping', call_type: 'default', church_context: { churchName: CONFIG.churchName } })
+        });
+        check('Edge Function: dcc-ai-proxy', res.status === 200, `HTTP ${res.status}`);
+      } catch(e) { check('Edge Function: dcc-ai-proxy', false, 'unreachable'); }
+    },
+    // Edge function audit
+    async () => {
+      try {
+        const res = await fetch(`${CONFIG.supabaseUrl}/functions/v1/dcc-audit`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${CONFIG.supabaseKey}` },
+          body: JSON.stringify({ level: 'info', event: 'in_app_diag_run' })
+        });
+        check('Edge Function: dcc-audit', res.status === 200, `HTTP ${res.status}`);
+      } catch(e) { check('Edge Function: dcc-audit', false, 'unreachable'); }
+    },
+    // CONFIG completeness
+    async () => {
+      const required = ['churchName','pastor','city','state','phone','email','supabaseUrl','supabaseKey'];
+      for (const field of required) {
+        const val = CONFIG[field];
+        check(`CONFIG.${field} set`, !!val && val.length > 2, val ? val.substring(0,30) : 'EMPTY');
+      }
+    },
+    // Giving links
+    async () => {
+      check('CONFIG giving.square set', !!CONFIG.giving?.square && CONFIG.giving.square.includes('square'), CONFIG.giving?.square ? 'set' : 'MISSING');
+      check('CONFIG giving.zelle set',  !!CONFIG.giving?.zelle  && CONFIG.giving.zelle.includes('@'),        CONFIG.giving?.zelle  ? 'set' : 'MISSING');
+      check('CONFIG giving.cashapp set',!!CONFIG.giving?.cashapp && CONFIG.giving.cashapp.startsWith('$'),   CONFIG.giving?.cashapp ? 'set' : 'MISSING');
+    }
+  ];
+
+  for (const fn of checks) {
+    await fn();
+  }
+
+  // Summary
+  const allPass = fail === 0;
+  results.innerHTML += `<div style="margin-top:14px;padding:12px;border-radius:8px;background:${allPass ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)'};border:1px solid ${allPass ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}">
+    <span style="font-weight:700;color:${allPass ? '#22c55e' : '#ef4444'}">${allPass ? '✓ ALL CLEAR' : '✗ ISSUES FOUND'}</span>
+    <span style="color:#888;margin-left:12px">${pass} passed · ${fail} failed</span>
+    ${!allPass ? '<div style="font-size:11px;color:#fca5a5;margin-top:6px">Fix failures before deploying to clients.</div>' : ''}
+  </div>`;
+
+  auditLog('info', 'in_app_diagnostics_run', { pass, fail, church: CONFIG.churchName });
+  btn.textContent = '▶ Run Diagnostics';
+  btn.disabled = false;
+}
+
+/* ── HELPER ───────────────────────────────────────*/
+function getMonday() {
+  const d = new Date();
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  return new Date(d.setDate(diff)).toISOString().split('T')[0];
+}
+</script>
+
+<!-- ═══ PASTOR DASHBOARD PANEL ═══ -->
+<div id="pastor-dashboard-panel" style="display:none;position:fixed;inset:0;z-index:300;background:var(--purple-deep);overflow-y:auto;padding:16px 16px 100px">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+    <div>
+      <div style="font-family:var(--font-display);font-size:18px;color:var(--gold-light)">Pastor's Dashboard</div>
+      <div style="font-size:11px;color:var(--text-muted)">Shan E. Davis · Dominion City Church</div>
+    </div>
+    <button onclick="document.getElementById('pastor-dashboard-panel').style.display='none'" style="font-size:22px;color:var(--text-muted)">✕</button>
+  </div>
+
+  <!-- Weekly Report -->
+  <div style="font-family:var(--font-display);font-size:13px;letter-spacing:1px;color:var(--gold-light);margin-bottom:10px;display:flex;align-items:center;gap:8px"><span style="display:block;width:18px;height:2px;background:var(--gold);border-radius:2px"></span>Weekly Pastoral Report</div>
+  <div id="pastoral-report-container" style="margin-bottom:20px"><div class="ai-status thinking">Loading report...</div></div>
+
+  <!-- Sermon Topics -->
+  <div style="font-family:var(--font-display);font-size:13px;letter-spacing:1px;color:var(--gold-light);margin-bottom:10px;display:flex;align-items:center;gap:8px"><span style="display:block;width:18px;height:2px;background:var(--gold);border-radius:2px"></span>Sermon Topic Suggestions</div>
+  <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px">Based on what your congregation is praying about and posting this week.</div>
+  <div id="sermon-topics-container" style="margin-bottom:20px"></div>
+
+  <!-- Announcement Drafts -->
+  <div style="font-family:var(--font-display);font-size:13px;letter-spacing:1px;color:var(--gold-light);margin-bottom:10px;display:flex;align-items:center;gap:8px"><span style="display:block;width:18px;height:2px;background:var(--gold);border-radius:2px"></span>Announcement Drafts</div>
+  <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px">Claude wrote these based on your upcoming events. Edit and approve to publish.</div>
+  <div id="ann-drafts-container" style="margin-bottom:20px"></div>
+
+  <!-- Outreach Suggestions -->
+  <div style="font-family:var(--font-display);font-size:13px;letter-spacing:1px;color:var(--gold-light);margin-bottom:10px;display:flex;align-items:center;gap:8px"><span style="display:block;width:18px;height:2px;background:var(--gold);border-radius:2px"></span>Outreach Suggestions</div>
+  <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px">AI-generated outreach ideas specific to Navasota TX and your congregation growth.</div>
+  <div id="outreach-suggestions-container" style="margin-bottom:20px"></div>
+
+  <!-- Feed Flags -->
+  <div style="font-family:var(--font-display);font-size:13px;letter-spacing:1px;color:var(--gold-light);margin-bottom:10px;display:flex;align-items:center;gap:8px"><span style="display:block;width:18px;height:2px;background:var(--gold);border-radius:2px"></span>Feed Posts Needing Attention <span id="feed-flag-badge" style="display:none;background:var(--gold);color:var(--purple-deep);font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px"></span></div>
+  <div id="feed-flags-container" style="margin-bottom:20px"><div style="font-size:13px;color:var(--text-muted)">Scanning feed...</div></div>
+
+  <!-- QOTW Generator -->
+  <div style="font-family:var(--font-display);font-size:13px;letter-spacing:1px;color:var(--gold-light);margin-bottom:10px;display:flex;align-items:center;gap:8px"><span style="display:block;width:18px;height:2px;background:var(--gold);border-radius:2px"></span>Ministry Room QOTW</div>
+  <div style="margin-bottom:8px"><span id="qotw-gen-status" class="ai-status"></span></div>
+  <button class="btn-outline" style="font-size:11px;padding:8px 18px;margin-bottom:20px" onclick="generateWeeklyQOTW()">✦ Regenerate All 9 Questions</button>
+
+  <!-- Scripture Generator -->
+  <div style="font-family:var(--font-display);font-size:13px;letter-spacing:1px;color:var(--gold-light);margin-bottom:10px;display:flex;align-items:center;gap:8px"><span style="display:block;width:18px;height:2px;background:var(--gold);border-radius:2px"></span>Daily Scripture</div>
+  <div style="margin-bottom:8px"><span id="scripture-gen-status" class="ai-status"></span></div>
+  <button class="btn-outline" style="font-size:11px;padding:8px 18px;margin-bottom:30px" onclick="generateDailyScripture()">✦ Generate Next 30 Days of Scripture</button>
+
+  <!-- ── DIAGNOSTICS ── -->
+  <div style="border-top:1px solid rgba(255,255,255,0.08);padding-top:20px;margin-top:10px">
+    <div style="font-family:var(--font-display);font-size:13px;letter-spacing:1px;color:var(--gold-light);margin-bottom:6px;display:flex;align-items:center;gap:8px"><span style="display:block;width:18px;height:2px;background:var(--gold);border-radius:2px"></span>System Diagnostics</div>
+    <div style="font-size:11px;color:var(--text-muted);margin-bottom:12px">Run before releasing an update. Checks database, RLS, Edge Functions, and cache.</div>
+    <button class="btn-gold" style="font-size:11px;padding:8px 18px;margin-bottom:14px" id="diag-run-btn" onclick="runInAppDiagnostics()">▶ Run Diagnostics</button>
+    <div id="diag-results" style="font-family:monospace;font-size:12px"></div>
+  </div>
+</div>
+
+<style>
+.ai-status { font-size:12px; color:var(--text-muted); display:block; padding:4px 0; }
+.ai-status.thinking { color:var(--gold); }
+.ai-status.done { color:#86efac; }
+.ai-status.error { color:#fca5a5; }
+.ann-draft-card { background:rgba(201,149,42,0.06); border:1px solid rgba(201,149,42,0.25); border-radius:var(--radius-sm); padding:14px; margin-bottom:12px; }
+.ann-draft-label { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--gold); margin-bottom:8px; }
+.ann-draft-title { font-family:var(--font-display); font-size:15px; color:var(--white); margin-bottom:8px; outline:none; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:6px; }
+.ann-draft-body { font-size:13px; line-height:1.7; color:rgba(255,255,255,0.8); outline:none; margin-bottom:12px; }
+.ann-draft-actions { display:flex; gap:8px; }
+.outreach-idea-card { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:var(--radius-sm); padding:14px; margin-bottom:10px; }
+.sermon-topic-card { background:rgba(107,53,184,0.12); border:1px solid rgba(107,53,184,0.3); border-radius:var(--radius-sm); padding:14px; margin-bottom:10px; }
+.feed-flag-item { background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.2); border-radius:var(--radius-sm); padding:12px; margin-bottom:8px; }
+</style>
+<script>
+// ── SERVICE WORKER REGISTRATION ──────────────────
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js', { scope: '/' })
+      .then(reg => {
+        _noop();
+        // Check for updates
+        reg.addEventListener('updatefound', () => {
+          const newWorker = reg.installing;
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              _noop();
+            }
+          });
+        });
+      })
+      .catch(err => auditLog('warn', 'dcc_sw_registration_failed', {detail: String(e || '').substring(0,200)}));
+  });
+}
+</script>
+</body>
+</html>
