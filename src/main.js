@@ -4,6 +4,7 @@ import './styles/reset.css';
 import './styles/layout.css';
 import './styles/components.css';
 import './styles/screens.css';
+import './styles/app-classes.css';
 
 // JS modules - import order matters for side effects
 import { auditLog } from './js/audit.js';
