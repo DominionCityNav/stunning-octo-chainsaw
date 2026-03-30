@@ -2,118 +2,109 @@ import db from './supabase.js';
 import { APP } from './state.js';
 import CONFIG from '../config.js';
 import { auditLog } from './audit.js';
+import { pushOverlay, popOverlay } from './navigation.js';
 
 function showRegistration() {
-  const overlay = document.getElementById('overlay-registration');
-  if (!overlay) return;
-
-  overlay.classList.add('active');
-  overlay.style.display = 'flex';
-  APP.activeOverlay = 'registration';
+  const el = document.getElementById('registration-screen');
+  if (!el) return;
+  el.classList.remove('hidden');
+  el.style.display = 'block';
+  pushOverlay('registration');
 }
 
 function closeRegistration() {
-  const overlay = document.getElementById('overlay-registration');
-  if (overlay) {
-    overlay.classList.remove('active');
-    overlay.style.display = 'none';
-  }
+  const el = document.getElementById('registration-screen');
+  if (!el) return;
+  el.classList.add('hidden');
+  el.style.display = 'none';
   if (APP.activeOverlay === 'registration') {
-    APP.activeOverlay = null;
-  }
-}
-
-async function submitRegistration() {
-  if (!db) return;
-
-  const firstName = document.getElementById('reg-first-name')?.value.trim();
-  const lastName = document.getElementById('reg-last-name')?.value.trim();
-  const email = document.getElementById('reg-email')?.value.trim();
-  const phone = document.getElementById('reg-phone')?.value.trim();
-  const pin = document.getElementById('reg-pin')?.value.trim();
-  const confirmPin = document.getElementById('reg-confirm-pin')?.value.trim();
-
-  if (!firstName || !lastName) {
-    alert('Please enter your first and last name.');
-    return;
-  }
-
-  if (!pin || pin.length !== 6 || !/^\d{6}$/.test(pin)) {
-    alert('Please enter a 6-digit PIN.');
-    return;
-  }
-
-  if (pin !== confirmPin) {
-    alert('PINs do not match.');
-    return;
-  }
-
-  // Check if PIN already exists
-  const { data: existing } = await db
-    .from('members')
-    .select('id')
-    .eq('pin', pin)
-    .single();
-
-  if (existing) {
-    alert('This PIN is already taken. Please choose a different one.');
-    return;
-  }
-
-  try {
-    const { error } = await db.from('members').insert({
-      first_name: firstName,
-      last_name: lastName,
-      email: email || null,
-      phone: phone || null,
-      pin,
-      status: 'pending',
-      role: 'member',
-      ministries: [],
-    });
-
-    if (error) {
-      alert('Registration failed. Please try again.');
-      auditLog('error', 'submit_registration_error', { message: error.message });
-      return;
-    }
-
-    // Clear form
-    ['reg-first-name', 'reg-last-name', 'reg-email', 'reg-phone', 'reg-pin', 'reg-confirm-pin'].forEach((id) => {
-      const el = document.getElementById(id);
-      if (el) el.value = '';
-    });
-
-    closeRegistration();
-    showPendingApprovalMessage();
-    auditLog('info', 'member_registration_submitted', { name: firstName + ' ' + lastName });
-  } catch (err) {
-    alert('Registration failed. Please try again.');
-    auditLog('error', 'submit_registration_error', { message: err.message });
-  }
-}
-
-function showPendingApprovalMessage() {
-  const _screen = document.getElementById('pin-screen');
-  const pinError = document.getElementById('pin-error');
-
-  if (pinError) {
-    pinError.innerHTML = `
-      <div class="pending-message">
-        <h3>Registration Submitted!</h3>
-        <p>Your account is pending approval by ${CONFIG.pastor}. You'll be able to log in once approved.</p>
-        <p>In the meantime, you can browse as a guest.</p>
-      </div>`;
+    popOverlay();
+    history.back();
   }
 }
 
 function showProfileSetup() {
-  const overlay = document.getElementById('overlay-profile-setup');
-  if (!overlay) return;
+  showRegistration();
+}
 
-  overlay.classList.add('active');
-  overlay.style.display = 'flex';
-  APP.activeOverlay = 'profile-setup';
+async function submitRegistration() {
+  const btn = document.getElementById('reg-submit-btn');
+  const errorEl = document.getElementById('reg-error');
+  const name = document.getElementById('reg-name')?.value.trim();
+  const phone = document.getElementById('reg-phone')?.value.trim();
+  const gender = document.getElementById('reg-gender')?.value;
+  const status = document.getElementById('reg-status')?.value;
+  const bmonth = document.getElementById('reg-bmonth')?.value;
+  const bday = document.getElementById('reg-bday')?.value;
+
+  if (!name) { if (errorEl) errorEl.textContent = 'Full name is required.'; return; }
+  if (!gender) { if (errorEl) errorEl.textContent = 'Please select your gender.'; return; }
+  if (!status) { if (errorEl) errorEl.textContent = 'Please select your membership type.'; return; }
+
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
+  if (errorEl) errorEl.textContent = '';
+
+  try {
+    const ministries = Array.from(
+      document.querySelectorAll('.reg-ministry-check:checked')
+    ).map((cb) => cb.value);
+
+    const updates = {
+      full_name: name,
+      phone: phone || null,
+      gender,
+      status: 'pending',
+      birthday_month: bmonth ? parseInt(bmonth) : null,
+      birthday_day: bday ? parseInt(bday) : null,
+      ministry_affiliations: ministries,
+      profile_complete: false,
+      profile_last_updated: new Date().toISOString(),
+    };
+
+    const { error } = await db
+      .from('members')
+      .update(updates)
+      .eq('id', APP.member.id);
+
+    if (error) {
+      if (errorEl) errorEl.textContent = 'Error: ' + error.message;
+      if (btn) { btn.disabled = false; btn.textContent = 'Complete Registration \u2726'; }
+      return;
+    }
+
+    APP.member = {
+      ...APP.member,
+      ...updates,
+      initials: name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase(),
+    };
+
+    auditLog('info', 'member_registration_pending', { member_id: APP.member.id });
+    closeRegistration();
+    showPendingApprovalMessage(name.split(' ')[0]);
+  } catch (err) {
+    if (errorEl) errorEl.textContent = 'Connection error. Try again.';
+    if (btn) { btn.disabled = false; btn.textContent = 'Complete Registration \u2726'; }
+    auditLog('error', 'registration_failed', { message: err.message });
+  }
+}
+
+function showPendingApprovalMessage(firstName) {
+  const overlay = document.createElement('div');
+  overlay.id = 'pending-overlay';
+  overlay.style.cssText = 'position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;height:100vh;z-index:300;background:var(--purple-deep);display:flex;align-items:center;justify-content:center;padding:32px';
+  overlay.innerHTML = `
+    <div style="text-align:center">
+      <div style="font-size:64px;margin-bottom:20px">\u{1F64F}</div>
+      <div style="font-family:var(--font-display);font-size:22px;color:var(--gold-light);margin-bottom:12px">Welcome, ${firstName || 'Friend'}!</div>
+      <div style="font-size:15px;line-height:1.8;color:rgba(255,255,255,0.85);margin-bottom:24px">
+        Your profile has been submitted for approval.<br><br>
+        ${CONFIG.pastor} will review your request within <strong style="color:var(--gold)">1\u20132 days</strong>.<br><br>
+        You'll be notified when your account is activated and can set your personal PIN.
+      </div>
+      <div style="font-size:13px;color:var(--text-muted);margin-bottom:28px">While you wait, you can still browse the Visitor section.</div>
+      <button onclick="document.getElementById('pending-overlay').remove();switchTab('visitors')" style="background:var(--gold);color:var(--purple-deep);font-family:var(--font-display);font-size:13px;font-weight:700;padding:14px 32px;border-radius:30px;border:none;cursor:pointer;letter-spacing:1px">Continue as Visitor \u2726</button>
+    </div>`;
+  document.body.appendChild(overlay);
 }
 
 // Attach to window for HTML onclick handlers
