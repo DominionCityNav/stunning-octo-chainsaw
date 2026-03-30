@@ -3907,26 +3907,19 @@ async function generateSermonTopics() {
    or member.is_admin === true.
 ─────────────────────────────────────────────────── */
 function openPastorDashboard() {
-  loadPendingMembers();
-  loadPendingEvents();
   const member = APP.member;
-  // Allow leadership status OR admin flag — Pastor Shan has is_admin=true
   if (!member) return;
   const canAccess = member.is_admin || member.status === 'leadership';
   if (!canAccess) { alert('Pastor Dashboard is restricted to leadership.'); return; }
 
   const panel = document.getElementById('pastor-dashboard-panel');
   if (!panel) return;
-  panel.style.display = 'block';
+  panel.style.display = 'flex';
   document.body.style.overflow = 'hidden';
   pushOverlay('pastor-dashboard');
 
-  // Auto-run on open
-  generateAnnouncementDrafts();
-  generateOutreachSuggestions();
-  generatePastoralReport();
-  generateSermonTopics();
-  moderateFeed();
+  // Load overview tab by default
+  switchDashTab('overview');
 }
 
 function closePastorDashboard() {
@@ -3934,6 +3927,162 @@ function closePastorDashboard() {
   if (panel) panel.style.display = 'none';
   document.body.style.overflow = '';
   if (APP.activeOverlay === 'pastor-dashboard') { popOverlay(); history.back(); }
+}
+
+/* ═══════════════════════════════════════════════════
+   DASHBOARD TAB SWITCHING
+   File-folder style — one open at a time.
+═══════════════════════════════════════════════════ */
+function switchDashTab(tab) {
+  // Hide all folders
+  document.querySelectorAll('.dash-folder').forEach(f => f.style.display = 'none');
+  // Deactivate all tabs
+  document.querySelectorAll('.dash-tab').forEach(t => t.classList.remove('active'));
+  // Show selected folder
+  const folder = document.getElementById('dash-tab-' + tab);
+  if (folder) folder.style.display = 'block';
+  // Activate tab button
+  document.querySelectorAll('.dash-tab').forEach(t => {
+    if (t.getAttribute('onclick')?.includes("'" + tab + "'")) t.classList.add('active');
+  });
+  // Load data for the tab
+  loadDashTabData(tab);
+}
+
+async function loadDashTabData(tab) {
+  if (tab === 'overview') {
+    generatePastoralReport();
+    generateSermonTopics();
+  }
+  if (tab === 'prayer') loadDashPrayer();
+  if (tab === 'qotw') loadDashQOTW();
+  if (tab === 'finance') loadDashFinance();
+  if (tab === 'members') loadPendingMembers();
+  if (tab === 'visitors') loadDashVisitors();
+  if (tab === 'events') loadPendingEvents();
+  if (tab === 'outreach') { generateAnnouncementDrafts(); generateOutreachSuggestions(); }
+  if (tab === 'system') moderateFeed();
+}
+
+async function loadDashPrayer() {
+  const container = document.getElementById('dash-prayer-container');
+  if (!container || !db) return;
+  container.innerHTML = '<div class="ai-status thinking">Loading...</div>';
+  try {
+    const { data } = await db.from('prayer_requests').select('*, members(full_name)')
+      .order('created_at', { ascending: false }).limit(30);
+    if (!data?.length) { container.innerHTML = '<div style="font-size:13px;color:var(--text-muted)">No prayer requests yet.</div>'; return; }
+    const publicCount = data.filter(p => p.request_type === 'public').length;
+    const privateCount = data.filter(p => p.request_type === 'private').length;
+    container.innerHTML = `
+      <div style="display:flex;gap:10px;margin-bottom:16px">
+        <div style="flex:1;text-align:center;padding:12px;background:rgba(255,255,255,0.04);border-radius:8px">
+          <div style="font-size:22px;font-weight:700;color:var(--gold-light)">${publicCount}</div>
+          <div style="font-size:10px;color:var(--text-muted);letter-spacing:1px">PUBLIC</div>
+        </div>
+        <div style="flex:1;text-align:center;padding:12px;background:rgba(255,255,255,0.04);border-radius:8px">
+          <div style="font-size:22px;font-weight:700;color:var(--gold-light)">${privateCount}</div>
+          <div style="font-size:10px;color:var(--text-muted);letter-spacing:1px">PRIVATE</div>
+        </div>
+      </div>` +
+      data.map(p => {
+        const name = p.is_anonymous ? 'Anonymous' : (p.members?.full_name || 'Member');
+        const badge = p.request_type === 'private' ? '<span style="font-size:9px;background:rgba(239,68,68,0.15);color:#fca5a5;border:1px solid rgba(239,68,68,0.3);padding:2px 8px;border-radius:10px;margin-left:6px">PRIVATE</span>' : '';
+        return `<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-sm);padding:12px;margin-bottom:8px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <span style="font-size:12px;font-weight:700;color:var(--gold-light)">${escHtml(name)}${badge}</span>
+            <span style="font-size:11px;color:var(--text-muted)">${timeAgo(p.created_at)}</span>
+          </div>
+          <div style="font-size:13px;line-height:1.6;color:rgba(255,255,255,0.85)">${escHtml(p.content)}</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:4px">🙏 ${p.prayed_count || 0} praying</div>
+        </div>`;
+      }).join('');
+  } catch(e) { container.innerHTML = '<div class="ai-status error">Could not load prayers.</div>'; }
+}
+
+async function loadDashQOTW() {
+  const container = document.getElementById('dash-qotw-container');
+  if (!container || !db) return;
+  container.innerHTML = '<div class="ai-status thinking">Loading...</div>';
+  try {
+    const d = new Date();
+    const diff = d.getDate() - d.getDay() + (d.getDay() === 0 ? -6 : 1);
+    const weekStart = new Date(d.getFullYear(), d.getMonth(), diff).toISOString().split('T')[0];
+    const { data } = await db.from('weekly_questions').select('*').eq('week_start', weekStart);
+    if (!data?.length) { container.innerHTML = '<div style="font-size:13px;color:var(--text-muted)">No questions for this week. Hit regenerate above.</div>'; return; }
+    container.innerHTML = data.map(q => {
+      const room = ROOMS[q.room] || { name: q.room, icon: '💬' };
+      return `<div style="background:rgba(107,53,184,0.12);border:1px solid rgba(107,53,184,0.3);border-radius:var(--radius-sm);padding:14px;margin-bottom:10px">
+        <div style="font-size:12px;color:var(--gold);margin-bottom:6px">${room.icon} ${escHtml(room.name)}</div>
+        <div style="font-size:13px;font-style:italic;line-height:1.6;color:rgba(255,255,255,0.9)">"${escHtml(q.question)}"</div>
+      </div>`;
+    }).join('');
+  } catch(e) { container.innerHTML = '<div class="ai-status error">Could not load questions.</div>'; }
+}
+
+async function loadDashFinance() {
+  const container = document.getElementById('dash-finance-container');
+  if (!container || !db) return;
+  container.innerHTML = '<div class="ai-status thinking">Loading...</div>';
+  try {
+    const now = new Date();
+    const yearStart = new Date(now.getFullYear(), 0, 1).toISOString().split('T')[0];
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+    const { data } = await db.from('member_giving').select('amount,method,given_at,member_id').gte('given_at', yearStart);
+    if (!data?.length) { container.innerHTML = '<div style="font-size:13px;color:var(--text-muted)">No giving data this year.</div>'; return; }
+    const fmt = n => '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2 });
+    const sum = rows => rows.reduce((a, r) => a + parseFloat(r.amount), 0);
+    const monthRows = data.filter(r => r.given_at >= monthStart);
+    const byMethod = { square: 0, zelle: 0, cashapp: 0 };
+    data.forEach(r => { if (byMethod[r.method] !== undefined) byMethod[r.method] += parseFloat(r.amount); });
+    container.innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+        <div style="text-align:center;padding:14px;background:rgba(255,255,255,0.04);border-radius:8px">
+          <div style="font-size:10px;color:var(--text-muted);letter-spacing:1px;margin-bottom:4px">THIS MONTH</div>
+          <div style="font-family:var(--font-display);font-size:20px;color:var(--gold-light)">${fmt(sum(monthRows))}</div>
+        </div>
+        <div style="text-align:center;padding:14px;background:rgba(255,255,255,0.04);border-radius:8px">
+          <div style="font-size:10px;color:var(--text-muted);letter-spacing:1px;margin-bottom:4px">YTD ${now.getFullYear()}</div>
+          <div style="font-family:var(--font-display);font-size:20px;color:var(--gold-light)">${fmt(sum(data))}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+        <span style="font-size:11px;color:var(--text-muted);padding:4px 10px;border:1px solid rgba(255,255,255,0.1);border-radius:10px">💳 Square: ${fmt(byMethod.square)}</span>
+        <span style="font-size:11px;color:var(--text-muted);padding:4px 10px;border:1px solid rgba(255,255,255,0.1);border-radius:10px">💜 Zelle: ${fmt(byMethod.zelle)}</span>
+        <span style="font-size:11px;color:var(--text-muted);padding:4px 10px;border:1px solid rgba(255,255,255,0.1);border-radius:10px">💚 Cash App: ${fmt(byMethod.cashapp)}</span>
+      </div>
+      <div style="font-size:11px;color:var(--text-muted)">${data.length} gifts · ${new Set(data.map(r=>r.member_id)).size} givers</div>`;
+  } catch(e) { container.innerHTML = '<div class="ai-status error">Could not load finance data.</div>'; }
+}
+
+async function loadDashVisitors() {
+  const container = document.getElementById('dash-visitors-container');
+  if (!container || !db) return;
+  container.innerHTML = '<div class="ai-status thinking">Loading...</div>';
+  try {
+    const { data } = await db.from('connect_cards').select('*').order('created_at', { ascending: false }).limit(30);
+    if (!data?.length) { container.innerHTML = '<div style="font-size:13px;color:var(--text-muted)">No connect cards yet.</div>'; return; }
+    const thisWeek = data.filter(c => Date.now() - new Date(c.created_at).getTime() < 7*24*60*60*1000).length;
+    container.innerHTML = `
+      <div style="text-align:center;padding:14px;background:rgba(255,255,255,0.04);border-radius:8px;margin-bottom:16px">
+        <div style="font-size:28px;font-weight:700;color:var(--gold-light)">${thisWeek}</div>
+        <div style="font-size:10px;color:var(--text-muted);letter-spacing:1px">THIS WEEK</div>
+      </div>` +
+      data.map(c => {
+        const isEMember = c.visit_type?.includes('E-Member');
+        const badge = isEMember ? '<span style="font-size:9px;background:rgba(107,53,184,0.2);color:#c4b5fd;border:1px solid rgba(107,53,184,0.4);padding:2px 8px;border-radius:10px;margin-left:6px">E-MEMBER</span>' : '';
+        return `<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-sm);padding:12px;margin-bottom:8px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <span style="font-size:13px;font-weight:700;color:var(--white)">${escHtml(c.full_name)}${badge}</span>
+            <span style="font-size:11px;color:var(--text-muted)">${timeAgo(c.created_at)}</span>
+          </div>
+          ${c.email ? '<div style="font-size:12px;color:var(--text-muted)">'+escHtml(c.email)+'</div>' : ''}
+          ${c.phone ? '<div style="font-size:12px;color:var(--text-muted)">'+escHtml(c.phone)+'</div>' : ''}
+          ${c.visit_type ? '<div style="font-size:11px;color:var(--gold);margin-top:4px">'+escHtml(c.visit_type)+'</div>' : ''}
+          ${c.prayer_request ? '<div style="font-size:12px;color:rgba(255,255,255,0.7);margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.06)">🙏 '+escHtml(c.prayer_request)+'</div>' : ''}
+        </div>`;
+      }).join('');
+  } catch(e) { container.innerHTML = '<div class="ai-status error">Could not load visitor data.</div>'; }
 }
 
 /* ── AUTO-RUN ENGINE ──────────────────────────────
@@ -4092,9 +4241,11 @@ function getMonday() {
 </script>
 
 <!-- ═══ PASTOR DASHBOARD PANEL ═══ -->
-<div id="pastor-dashboard-panel" style="display:none;position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;height:100vh;z-index:300;background:var(--purple-deep);overflow-y:auto;padding:16px 16px 100px">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-    <div>
+<div id="pastor-dashboard-panel" style="display:none;position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;height:100vh;z-index:300;background:var(--purple-deep);overflow:hidden;display:none;flex-direction:column">
+
+  <!-- Header -->
+  <div style="flex-shrink:0;padding:16px 16px 0">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
       <div style="display:flex;align-items:center;gap:12px">
         <div style="width:44px;height:44px;border-radius:50%;overflow:hidden;border:2px solid var(--gold);flex-shrink:0" id="dash-pastor-photo"></div>
         <div>
@@ -4102,81 +4253,129 @@ function getMonday() {
           <div style="font-size:11px;color:var(--text-muted)" data-config="pastor">Shan E. Davis · Dominion City Church</div>
         </div>
       </div>
+      <button onclick="closePastorDashboard()" style="font-size:22px;color:var(--text-muted)">✕</button>
     </div>
-    <button onclick="closePastorDashboard()" style="font-size:22px;color:var(--text-muted)">✕</button>
-  </div>
 
-  <!-- Church-Wide Blast -->
-  <div style="font-family:var(--font-display);font-size:13px;letter-spacing:1px;color:var(--gold-light);margin-bottom:10px;display:flex;align-items:center;gap:8px"><span style="display:block;width:18px;height:2px;background:var(--gold);border-radius:2px"></span>Send Church-Wide Message</div>
-  <div style="background:rgba(201,149,42,0.06);border:1px solid rgba(201,149,42,0.2);border-radius:var(--radius-sm);padding:16px;margin-bottom:20px">
-    <div style="display:flex;gap:8px;margin-bottom:12px">
-      <button id="blast-type-text" class="compose-type-btn active" onclick="setBlastType('text')">✏️ Text</button>
-      <button id="blast-type-voice" class="compose-type-btn" onclick="setBlastType('voice')">🎙️ Voice</button>
+    <!-- File Folder Tabs -->
+    <div id="dash-tabs" style="display:flex;gap:4px;overflow-x:auto;padding-bottom:0;-webkit-overflow-scrolling:touch">
+      <button class="dash-tab active" onclick="switchDashTab('overview')">Overview</button>
+      <button class="dash-tab" onclick="switchDashTab('prayer')">🙏 Prayer</button>
+      <button class="dash-tab" onclick="switchDashTab('qotw')">💬 QOTW</button>
+      <button class="dash-tab" onclick="switchDashTab('finance')">💰 Finance</button>
+      <button class="dash-tab" onclick="switchDashTab('members')">👥 Members</button>
+      <button class="dash-tab" onclick="switchDashTab('visitors')">🤝 Visitors</button>
+      <button class="dash-tab" onclick="switchDashTab('events')">📅 Events</button>
+      <button class="dash-tab" onclick="switchDashTab('outreach')">📢 Outreach</button>
+      <button class="dash-tab" onclick="switchDashTab('system')">⚙️ System</button>
     </div>
-    <textarea id="blast-text-input" class="form-input" rows="4" placeholder="Type your message to the church..." style="margin-bottom:10px;background:rgba(255,255,255,0.06);color:var(--white);border-color:rgba(201,149,42,0.3)"></textarea>
-    <div id="blast-voice-section" style="display:none;text-align:center;padding:16px;background:rgba(255,255,255,0.04);border-radius:8px;margin-bottom:10px">
-      <div id="blast-record-status" style="font-size:13px;color:var(--text-muted);margin-bottom:12px">Ready to record</div>
-      <button id="blast-record-btn" onclick="toggleBlastRecording()" style="width:64px;height:64px;border-radius:50%;background:var(--gold);border:none;cursor:pointer;font-size:28px">🎙️</button>
-      <div id="blast-audio-preview" style="margin-top:12px;display:none"><audio id="blast-audio-el" controls style="width:100%;border-radius:8px"></audio></div>
+  </div>
+
+  <!-- Tab Content Area (one open at a time) -->
+  <div style="flex:1;overflow-y:auto;padding:16px 16px 100px">
+
+    <!-- ═══ OVERVIEW TAB ═══ -->
+    <div class="dash-folder" id="dash-tab-overview">
+      <div style="font-family:var(--font-display);font-size:13px;letter-spacing:1px;color:var(--gold-light);margin-bottom:10px;display:flex;align-items:center;gap:8px"><span style="display:block;width:18px;height:2px;background:var(--gold);border-radius:2px"></span>Send Church-Wide Message</div>
+      <div style="background:rgba(201,149,42,0.06);border:1px solid rgba(201,149,42,0.2);border-radius:var(--radius-sm);padding:16px;margin-bottom:20px">
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <button id="blast-type-text" class="compose-type-btn active" onclick="setBlastType('text')">✏️ Text</button>
+          <button id="blast-type-voice" class="compose-type-btn" onclick="setBlastType('voice')">🎙️ Voice</button>
+        </div>
+        <textarea id="blast-text-input" class="form-input" rows="4" placeholder="Type your message to the church..." style="margin-bottom:10px;background:rgba(255,255,255,0.06);color:var(--white);border-color:rgba(201,149,42,0.3)"></textarea>
+        <div id="blast-voice-section" style="display:none;text-align:center;padding:16px;background:rgba(255,255,255,0.04);border-radius:8px;margin-bottom:10px">
+          <div id="blast-record-status" style="font-size:13px;color:var(--text-muted);margin-bottom:12px">Ready to record</div>
+          <button id="blast-record-btn" onclick="toggleBlastRecording()" style="width:64px;height:64px;border-radius:50%;background:var(--gold);border:none;cursor:pointer;font-size:28px">🎙️</button>
+          <div id="blast-audio-preview" style="margin-top:12px;display:none"><audio id="blast-audio-el" controls style="width:100%;border-radius:8px"></audio></div>
+        </div>
+        <button class="btn-gold btn-full" onclick="sendBlast()">Send to All Members ✦</button>
+        <div id="blast-send-status" style="font-size:12px;color:var(--gold);text-align:center;margin-top:8px;min-height:16px"></div>
+      </div>
+
+      <div style="font-family:var(--font-display);font-size:13px;letter-spacing:1px;color:var(--gold-light);margin-bottom:10px;display:flex;align-items:center;gap:8px"><span style="display:block;width:18px;height:2px;background:var(--gold);border-radius:2px"></span>Weekly Pastoral Report</div>
+      <div id="pastoral-report-container" style="margin-bottom:20px"><div class="ai-status thinking">Loading report...</div></div>
+
+      <div style="font-family:var(--font-display);font-size:13px;letter-spacing:1px;color:var(--gold-light);margin-bottom:10px;display:flex;align-items:center;gap:8px"><span style="display:block;width:18px;height:2px;background:var(--gold);border-radius:2px"></span>Sermon Topic Suggestions</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px">Based on what your congregation is praying about and posting this week.</div>
+      <div id="sermon-topics-container" style="margin-bottom:20px"></div>
     </div>
-    <button class="btn-gold btn-full" onclick="sendBlast()">Send to All Members ✦</button>
-    <div id="blast-send-status" style="font-size:12px;color:var(--gold);text-align:center;margin-top:8px;min-height:16px"></div>
-  </div>
 
-  <!-- Weekly Report -->
-  <div style="font-family:var(--font-display);font-size:13px;letter-spacing:1px;color:var(--gold-light);margin-bottom:10px;display:flex;align-items:center;gap:8px"><span style="display:block;width:18px;height:2px;background:var(--gold);border-radius:2px"></span>Weekly Pastoral Report</div>
-  <div id="pastoral-report-container" style="margin-bottom:20px"><div class="ai-status thinking">Loading report...</div></div>
+    <!-- ═══ PRAYER TAB ═══ -->
+    <div class="dash-folder" id="dash-tab-prayer" style="display:none">
+      <div style="font-family:var(--font-display);font-size:13px;letter-spacing:1px;color:var(--gold-light);margin-bottom:12px;display:flex;align-items:center;gap:8px"><span style="display:block;width:18px;height:2px;background:var(--gold);border-radius:2px"></span>Prayer Requests</div>
+      <div id="dash-prayer-container" style="margin-bottom:20px"><div style="font-size:13px;color:var(--text-muted)">Loading prayer requests...</div></div>
+    </div>
 
-  <!-- Sermon Topics -->
-  <div style="font-family:var(--font-display);font-size:13px;letter-spacing:1px;color:var(--gold-light);margin-bottom:10px;display:flex;align-items:center;gap:8px"><span style="display:block;width:18px;height:2px;background:var(--gold);border-radius:2px"></span>Sermon Topic Suggestions</div>
-  <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px">Based on what your congregation is praying about and posting this week.</div>
-  <div id="sermon-topics-container" style="margin-bottom:20px"></div>
+    <!-- ═══ QOTW TAB ═══ -->
+    <div class="dash-folder" id="dash-tab-qotw" style="display:none">
+      <div style="font-family:var(--font-display);font-size:13px;letter-spacing:1px;color:var(--gold-light);margin-bottom:10px;display:flex;align-items:center;gap:8px"><span style="display:block;width:18px;height:2px;background:var(--gold);border-radius:2px"></span>Ministry Room QOTW</div>
+      <div style="margin-bottom:8px"><span id="qotw-gen-status" class="ai-status"></span></div>
+      <button class="btn-outline" style="font-size:11px;padding:8px 18px;margin-bottom:20px" onclick="generateWeeklyQOTW()">✦ Regenerate All 9 Questions</button>
+      <div id="dash-qotw-container"><div style="font-size:13px;color:var(--text-muted)">Loading questions...</div></div>
+    </div>
 
-  <!-- Announcement Drafts -->
-  <div style="font-family:var(--font-display);font-size:13px;letter-spacing:1px;color:var(--gold-light);margin-bottom:10px;display:flex;align-items:center;gap:8px"><span style="display:block;width:18px;height:2px;background:var(--gold);border-radius:2px"></span>Announcement Drafts</div>
-  <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px">Claude wrote these based on your upcoming events. Edit and approve to publish.</div>
-  <div id="ann-drafts-container" style="margin-bottom:20px"></div>
+    <!-- ═══ FINANCE TAB ═══ -->
+    <div class="dash-folder" id="dash-tab-finance" style="display:none">
+      <div style="font-family:var(--font-display);font-size:13px;letter-spacing:1px;color:var(--gold-light);margin-bottom:12px;display:flex;align-items:center;gap:8px"><span style="display:block;width:18px;height:2px;background:var(--gold);border-radius:2px"></span>Giving &amp; Finance</div>
+      <div id="dash-finance-container"><div style="font-size:13px;color:var(--text-muted)">Loading finance data...</div></div>
+    </div>
 
-  <!-- Outreach Suggestions -->
-  <div style="font-family:var(--font-display);font-size:13px;letter-spacing:1px;color:var(--gold-light);margin-bottom:10px;display:flex;align-items:center;gap:8px"><span style="display:block;width:18px;height:2px;background:var(--gold);border-radius:2px"></span>Outreach Suggestions</div>
-  <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px">AI-generated outreach ideas specific to Navasota TX and your congregation growth.</div>
-  <div id="outreach-suggestions-container" style="margin-bottom:20px"></div>
+    <!-- ═══ MEMBERS TAB ═══ -->
+    <div class="dash-folder" id="dash-tab-members" style="display:none">
+      <div style="font-family:var(--font-display);font-size:13px;letter-spacing:1px;color:var(--gold-light);margin-bottom:10px;display:flex;align-items:center;gap:8px"><span style="display:block;width:18px;height:2px;background:var(--gold);border-radius:2px"></span>Pending Member Approvals <span id="pending-badge" style="background:var(--gold);color:var(--purple-deep);font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;display:none"></span></div>
+      <div id="pending-members-container" style="margin-bottom:20px"><div style="font-size:13px;color:var(--text-muted)">Loading...</div></div>
+    </div>
 
-  <!-- Feed Flags -->
-  <div style="font-family:var(--font-display);font-size:13px;letter-spacing:1px;color:var(--gold-light);margin-bottom:10px;display:flex;align-items:center;gap:8px"><span style="display:block;width:18px;height:2px;background:var(--gold);border-radius:2px"></span>Feed Posts Needing Attention <span id="feed-flag-badge" style="display:none;background:var(--gold);color:var(--purple-deep);font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px"></span></div>
-  <div id="feed-flags-container" style="margin-bottom:20px"><div style="font-size:13px;color:var(--text-muted)">Scanning feed...</div></div>
+    <!-- ═══ VISITORS TAB ═══ -->
+    <div class="dash-folder" id="dash-tab-visitors" style="display:none">
+      <div style="font-family:var(--font-display);font-size:13px;letter-spacing:1px;color:var(--gold-light);margin-bottom:12px;display:flex;align-items:center;gap:8px"><span style="display:block;width:18px;height:2px;background:var(--gold);border-radius:2px"></span>Connect Cards &amp; Visitors</div>
+      <div id="dash-visitors-container"><div style="font-size:13px;color:var(--text-muted)">Loading visitor data...</div></div>
+    </div>
 
-  <!-- QOTW Generator -->
-  <div style="font-family:var(--font-display);font-size:13px;letter-spacing:1px;color:var(--gold-light);margin-bottom:10px;display:flex;align-items:center;gap:8px"><span style="display:block;width:18px;height:2px;background:var(--gold);border-radius:2px"></span>Ministry Room QOTW</div>
-  <div style="margin-bottom:8px"><span id="qotw-gen-status" class="ai-status"></span></div>
-  <button class="btn-outline" style="font-size:11px;padding:8px 18px;margin-bottom:20px" onclick="generateWeeklyQOTW()">✦ Regenerate All 9 Questions</button>
+    <!-- ═══ EVENTS TAB ═══ -->
+    <div class="dash-folder" id="dash-tab-events" style="display:none">
+      <div style="font-family:var(--font-display);font-size:13px;letter-spacing:1px;color:var(--gold-light);margin-bottom:10px;display:flex;align-items:center;gap:8px"><span style="display:block;width:18px;height:2px;background:var(--gold);border-radius:2px"></span>Pending Event Approvals <span id="pending-events-badge" style="background:var(--gold);color:var(--purple-deep);font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;display:none"></span></div>
+      <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px">Ministry-submitted events waiting for your approval.</div>
+      <div id="pending-events-container" style="margin-bottom:20px"><div style="font-size:13px;color:var(--text-muted)">Loading...</div></div>
+    </div>
 
-  <!-- Scripture Generator -->
-  <div style="font-family:var(--font-display);font-size:13px;letter-spacing:1px;color:var(--gold-light);margin-bottom:10px;display:flex;align-items:center;gap:8px"><span style="display:block;width:18px;height:2px;background:var(--gold);border-radius:2px"></span>Daily Scripture</div>
-  <div style="margin-bottom:8px"><span id="scripture-gen-status" class="ai-status"></span></div>
-  <button class="btn-outline" style="font-size:11px;padding:8px 18px;margin-bottom:30px" onclick="generateDailyScripture()">✦ Generate Next 30 Days of Scripture</button>
+    <!-- ═══ OUTREACH TAB ═══ -->
+    <div class="dash-folder" id="dash-tab-outreach" style="display:none">
+      <div style="font-family:var(--font-display);font-size:13px;letter-spacing:1px;color:var(--gold-light);margin-bottom:10px;display:flex;align-items:center;gap:8px"><span style="display:block;width:18px;height:2px;background:var(--gold);border-radius:2px"></span>Announcement Drafts</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px">Claude wrote these based on your upcoming events. Edit and approve to publish.</div>
+      <div id="ann-drafts-container" style="margin-bottom:20px"></div>
 
-  <!-- Pending Event Approvals -->
-  <div style="font-family:var(--font-display);font-size:13px;letter-spacing:1px;color:var(--gold-light);margin-bottom:10px;display:flex;align-items:center;gap:8px"><span style="display:block;width:18px;height:2px;background:var(--gold);border-radius:2px"></span>Pending Event Approvals <span id="pending-events-badge" style="background:var(--gold);color:var(--purple-deep);font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;display:none"></span></div>
-  <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px">Ministry-submitted events waiting for your approval.</div>
-  <div id="pending-events-container" style="margin-bottom:20px"><div style="font-size:13px;color:var(--text-muted)">Loading...</div></div>
+      <div style="font-family:var(--font-display);font-size:13px;letter-spacing:1px;color:var(--gold-light);margin-bottom:10px;display:flex;align-items:center;gap:8px"><span style="display:block;width:18px;height:2px;background:var(--gold);border-radius:2px"></span>Outreach Suggestions</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px">AI-generated outreach ideas specific to Navasota TX and your congregation growth.</div>
+      <div id="outreach-suggestions-container" style="margin-bottom:20px"></div>
+    </div>
 
-  <!-- Pending Member Approvals -->
-  <div style="font-family:var(--font-display);font-size:13px;letter-spacing:1px;color:var(--gold-light);margin-bottom:10px;display:flex;align-items:center;gap:8px"><span style="display:block;width:18px;height:2px;background:var(--gold);border-radius:2px"></span>Pending Approvals <span id="pending-badge" style="background:var(--gold);color:var(--purple-deep);font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;display:none"></span></div>
-  <div id="pending-members-container" style="margin-bottom:20px">
-    <div style="font-size:13px;color:var(--text-muted)">Loading...</div>
-  </div>
+    <!-- ═══ SYSTEM TAB ═══ -->
+    <div class="dash-folder" id="dash-tab-system" style="display:none">
+      <div style="font-family:var(--font-display);font-size:13px;letter-spacing:1px;color:var(--gold-light);margin-bottom:10px;display:flex;align-items:center;gap:8px"><span style="display:block;width:18px;height:2px;background:var(--gold);border-radius:2px"></span>Feed Posts Needing Attention <span id="feed-flag-badge" style="display:none;background:var(--gold);color:var(--purple-deep);font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px"></span></div>
+      <div id="feed-flags-container" style="margin-bottom:20px"><div style="font-size:13px;color:var(--text-muted)">Scanning feed...</div></div>
 
-  <!-- ── DIAGNOSTICS ── -->
-  <div style="border-top:1px solid rgba(255,255,255,0.08);padding-top:20px;margin-top:10px">
-    <div style="font-family:var(--font-display);font-size:13px;letter-spacing:1px;color:var(--gold-light);margin-bottom:6px;display:flex;align-items:center;gap:8px"><span style="display:block;width:18px;height:2px;background:var(--gold);border-radius:2px"></span>System Diagnostics</div>
-    <div style="font-size:11px;color:var(--text-muted);margin-bottom:12px">Run before releasing an update. Checks database, RLS, Edge Functions, and cache.</div>
-    <button class="btn-gold" style="font-size:11px;padding:8px 18px;margin-bottom:14px" id="diag-run-btn" onclick="runInAppDiagnostics()">▶ Run Diagnostics</button>
-    <div id="diag-results" style="font-family:monospace;font-size:12px"></div>
-  </div>
+      <div style="font-family:var(--font-display);font-size:13px;letter-spacing:1px;color:var(--gold-light);margin-bottom:10px;display:flex;align-items:center;gap:8px"><span style="display:block;width:18px;height:2px;background:var(--gold);border-radius:2px"></span>Daily Scripture</div>
+      <div style="margin-bottom:8px"><span id="scripture-gen-status" class="ai-status"></span></div>
+      <button class="btn-outline" style="font-size:11px;padding:8px 18px;margin-bottom:30px" onclick="generateDailyScripture()">✦ Generate Next 30 Days of Scripture</button>
+
+      <div style="border-top:1px solid rgba(255,255,255,0.08);padding-top:20px;margin-top:10px">
+        <div style="font-family:var(--font-display);font-size:13px;letter-spacing:1px;color:var(--gold-light);margin-bottom:6px;display:flex;align-items:center;gap:8px"><span style="display:block;width:18px;height:2px;background:var(--gold);border-radius:2px"></span>System Diagnostics</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:12px">Run before releasing an update. Checks database, RLS, Edge Functions, and cache.</div>
+        <button class="btn-gold" style="font-size:11px;padding:8px 18px;margin-bottom:14px" id="diag-run-btn" onclick="runInAppDiagnostics()">▶ Run Diagnostics</button>
+        <div id="diag-results" style="font-family:monospace;font-size:12px"></div>
+      </div>
+    </div>
+
+  </div><!-- end tab content area -->
 </div>
 
 <style>
+/* Dashboard file-folder tabs */
+.dash-tab{font-size:11px;font-weight:700;letter-spacing:0.5px;padding:8px 14px;border-radius:8px 8px 0 0;border:1px solid rgba(255,255,255,0.08);border-bottom:none;color:var(--text-muted);background:rgba(255,255,255,0.03);cursor:pointer;white-space:nowrap;transition:var(--transition);flex-shrink:0}
+.dash-tab:hover{color:var(--gold);background:rgba(201,149,42,0.06)}
+.dash-tab.active{color:var(--gold-light);background:var(--bg-card);border-color:var(--card-border)}
+.dash-folder{animation:fadeUp 0.25s ease}
+
 .ai-status { font-size:12px; color:var(--text-muted); display:block; padding:4px 0; }
 .ai-status.thinking { color:var(--gold); }
 .ai-status.done { color:#86efac; }
