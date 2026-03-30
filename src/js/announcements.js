@@ -41,6 +41,7 @@ export async function loadEvents() {
     const { data, error } = await db
       .from('events')
       .select('*')
+      .eq('is_public', true)
       .gte('event_date', today)
       .order('event_date', { ascending: true })
       .limit(20);
@@ -71,3 +72,5 @@ export async function loadEvents() {
     auditLog('error', 'load_events_error', { message: err.message });
   }
 }
+
+window.loadEvents = loadEvents;

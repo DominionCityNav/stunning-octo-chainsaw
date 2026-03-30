@@ -17,6 +17,7 @@ function openPastorDashboard() {
   APP.activeOverlay = 'pastor-dashboard';
 
   loadPendingMembers();
+  loadPendingEvents();
   runInAppDiagnostics();
 }
 
@@ -158,6 +159,92 @@ async function declineMember(memberId) {
   }
 }
 
+async function loadPendingEvents() {
+  if (!db) return;
+  const container = document.getElementById('pending-events-container');
+  const badge = document.getElementById('pending-events-badge');
+  if (!container) return;
+
+  try {
+    const { data, error } = await db
+      .from('events')
+      .select('*, members(full_name)')
+      .eq('is_public', false)
+      .order('event_date', { ascending: true });
+
+    if (error || !data || data.length === 0) {
+      container.innerHTML = '<div class="muted-text">No pending events \u2713</div>';
+      if (badge) badge.classList.add('hidden');
+      return;
+    }
+
+    if (badge) {
+      badge.textContent = data.length;
+      badge.classList.remove('hidden');
+    }
+
+    container.innerHTML = data.map((evt) => {
+      const d = new Date(evt.event_date);
+      const dateStr = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+      const submitter = evt.members?.full_name || 'Unknown member';
+      return `
+        <div class="pending-event-card" style="background:rgba(255,255,255,0.04);border:1px solid rgba(201,149,42,0.2);border-radius:var(--radius-sm);padding:14px;margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+            <div>
+              <div style="font-family:var(--font-display);font-size:15px;color:var(--white)">${escHtml(evt.title)}</div>
+              <div style="font-size:12px;color:var(--gold);margin-top:2px">${dateStr}${evt.event_time ? ' &middot; ' + escHtml(evt.event_time) : ''}</div>
+            </div>
+          </div>
+          ${evt.location ? `<div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">\u{1F4CD} ${escHtml(evt.location)}</div>` : ''}
+          ${evt.description ? `<div style="font-size:12px;color:rgba(255,255,255,0.7);margin-bottom:8px">${escHtml(evt.description)}</div>` : ''}
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px">Submitted by ${escHtml(submitter)}</div>
+          <div style="display:flex;gap:8px">
+            <button onclick="approveEvent('${evt.id}')" class="btn-gold" style="flex:1;font-size:12px;padding:8px">\u2713 Approve</button>
+            <button onclick="rejectEvent('${evt.id}')" style="flex:1;background:rgba(239,68,68,0.15);color:#fca5a5;font-size:12px;padding:8px;border-radius:8px;border:1px solid rgba(239,68,68,0.3);cursor:pointer">\u2717 Reject</button>
+          </div>
+        </div>`;
+    }).join('');
+  } catch (err) {
+    auditLog('error', 'load_pending_events_error', { message: err.message });
+    container.innerHTML = '<div class="muted-text">Could not load pending events.</div>';
+  }
+}
+
+async function approveEvent(eventId) {
+  if (!db) return;
+  try {
+    const { error } = await db
+      .from('events')
+      .update({ is_public: true })
+      .eq('id', eventId);
+
+    if (!error) {
+      auditLog('info', 'event_approved', { event_id: eventId, approved_by: APP.member?.id });
+      loadPendingEvents();
+    }
+  } catch (err) {
+    auditLog('error', 'approve_event_error', { message: err.message });
+  }
+}
+
+async function rejectEvent(eventId) {
+  if (!db) return;
+  if (!confirm('Reject this event? It will be deleted.')) return;
+  try {
+    const { error } = await db
+      .from('events')
+      .delete()
+      .eq('id', eventId);
+
+    if (!error) {
+      auditLog('info', 'event_rejected', { event_id: eventId, rejected_by: APP.member?.id });
+      loadPendingEvents();
+    }
+  } catch (err) {
+    auditLog('error', 'reject_event_error', { message: err.message });
+  }
+}
+
 // Attach to window for HTML onclick handlers
 window.openPastorDashboard = openPastorDashboard;
 window.closePastorDashboard = closePastorDashboard;
@@ -165,6 +252,9 @@ window.runInAppDiagnostics = runInAppDiagnostics;
 window.loadPendingMembers = loadPendingMembers;
 window.approveMember = approveMember;
 window.declineMember = declineMember;
+window.loadPendingEvents = loadPendingEvents;
+window.approveEvent = approveEvent;
+window.rejectEvent = rejectEvent;
 
 export {
   openPastorDashboard,
@@ -173,4 +263,7 @@ export {
   loadPendingMembers,
   approveMember,
   declineMember,
+  loadPendingEvents,
+  approveEvent,
+  rejectEvent,
 };

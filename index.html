@@ -275,7 +275,28 @@
         </div>
         <div class="cal-grid" id="cal-grid-2"></div>
       </div>
-      <div class="section-head"><div class="section-title">Upcoming Events</div></div>
+      <div class="section-head">
+        <div class="section-title">Upcoming Events</div>
+        <button class="btn-outline btn-sm" onclick="toggleEventForm()">+ Add Event</button>
+      </div>
+
+      <div id="evt-create-form" class="hidden">
+        <div class="card">
+          <div class="card-title">&#x1F4C5; New Event</div>
+          <div id="evt-error" class="error-text"></div>
+          <div class="form-group"><label class="form-label">Event Title *</label><input type="text" class="form-input" id="evt-title" placeholder="e.g., Youth Night, Bible Study"></div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Date *</label><input type="date" class="form-input" id="evt-date"></div>
+            <div class="form-group"><label class="form-label">Time</label><input type="time" class="form-input" id="evt-time"></div>
+          </div>
+          <div class="form-group"><label class="form-label">Location</label><input type="text" class="form-input" id="evt-location" placeholder="e.g., 625 Blackshear St, Fellowship Hall"></div>
+          <div class="form-group"><label class="form-label">Description</label><textarea class="form-input" id="evt-description" rows="2" placeholder="Brief details about the event..."></textarea></div>
+          <button class="btn-gold btn-full" id="evt-submit-btn" onclick="submitEvent()">Save Event &#x2726;</button>
+          <div class="toast" id="evt-toast"></div>
+          <div class="hint-text" style="margin-top:8px">Admin events publish immediately. Ministry events require approval.</div>
+        </div>
+      </div>
+
       <div id="events-list"></div>
     </div>
 
@@ -604,7 +625,11 @@
   <div><span id="scripture-gen-status" class="ai-status"></span></div>
   <button class="btn-outline" onclick="generateDailyScripture()">&#x2726; Generate Next 30 Days of Scripture</button>
 
-  <div class="dash-section-title"><span class="dash-bar"></span>Pending Approvals <span id="pending-badge" class="pending-badge hidden"></span></div>
+  <div class="dash-section-title"><span class="dash-bar"></span>Pending Event Approvals <span id="pending-events-badge" class="pending-badge hidden"></span></div>
+  <div class="hint-text">Ministry-submitted events waiting for your approval.</div>
+  <div id="pending-events-container"><div class="muted-text">Loading...</div></div>
+
+  <div class="dash-section-title"><span class="dash-bar"></span>Pending Member Approvals <span id="pending-badge" class="pending-badge hidden"></span></div>
   <div id="pending-members-container"><div class="muted-text">Loading...</div></div>
 
   <div class="dash-diagnostics">
