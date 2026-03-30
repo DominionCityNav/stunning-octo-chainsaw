@@ -1,0 +1,37 @@
+:root {
+  /* Dark layer (auth + nav anchor) */
+  --purple-deep: #0f0a1a;
+  --purple-mid: #1e1535;
+  --purple-light: #4a1e8a;
+  --purple-bright: #6b35b8;
+
+  /* Content screens */
+  --bg-main: #0f0a1a;
+  --bg-card: #1e1535;
+  --bg-card-tint: #251842;
+  --bg-section: #160d2e;
+
+  /* Gold */
+  --gold: #c9952a;
+  --gold-light: #e8b84b;
+  --gold-pale: #f5e4b8;
+
+  /* Text */
+  --white: #fff;
+  --text-on-cream: #f5f0ff;
+  --text-muted-cream: #9b8ab8;
+  --text-muted: #9b8ab8;
+  --off-white: #f5f0ff;
+
+  /* Cards */
+  --card-bg: #1e1535;
+  --card-border: rgba(201, 149, 42, 0.35);
+  --ministry-border: rgba(201, 149, 42, 0.3);
+
+  /* Typography */
+  --font-display: 'Cinzel', serif;
+  --font-body: 'Nunito', sans-serif;
+  --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --radius: 16px;
+  --radius-sm: 10px;
+}

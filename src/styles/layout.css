@@ -1,0 +1,375 @@
+/* App shell */
+#app {
+  display: none;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+#app.on {
+  display: flex;
+  background: var(--bg-main);
+  padding-bottom: 0;
+}
+
+#splash,
+#auth-screen,
+#app,
+#pastor-dashboard-panel {
+  width: 100%;
+  max-width: 430px;
+  position: relative;
+}
+
+/* Desktop phone frame */
+@media (min-width: 500px) {
+  body {
+    padding: 20px 0;
+    min-height: 100vh;
+    align-items: flex-start;
+  }
+
+  #app {
+    min-height: calc(100vh - 40px);
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 0 0 1px rgba(201, 149, 42, 0.3), 0 40px 80px rgba(0, 0, 0, 0.8);
+  }
+
+  #splash {
+    border-radius: 24px;
+    overflow: hidden;
+    height: calc(100vh - 40px);
+  }
+
+  #auth-screen {
+    min-height: calc(100vh - 40px);
+    border-radius: 24px;
+    overflow: hidden;
+  }
+
+  #pastor-dashboard-panel {
+    border-radius: 24px;
+    overflow: hidden;
+    max-height: calc(100vh - 40px);
+  }
+}
+
+@media (max-width: 499px) {
+  body {
+    background: var(--purple-deep);
+  }
+
+  #app {
+    min-height: 100vh;
+  }
+}
+
+/* Ensure app scrolls above fixed nav */
+#app {
+  padding-bottom: 70px;
+}
+
+/* Splash */
+#splash {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 430px;
+  height: 100vh;
+  z-index: 9999;
+  background: var(--purple-deep);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  transition: opacity 0.6s ease;
+}
+
+#splash.out {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.splash-logo-wrap {
+  position: relative;
+  width: 100px;
+  height: 100px;
+}
+
+.splash-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  border-top-color: var(--gold);
+  border-right-color: var(--gold-light);
+  animation: spin 2s linear infinite;
+}
+
+.splash-inner {
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  background: var(--purple-mid);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.splash-title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  letter-spacing: 3px;
+  color: var(--gold-light);
+  text-align: center;
+}
+
+.splash-sub {
+  font-size: 11px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.splash-bar {
+  width: 200px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+
+.splash-fill {
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, var(--gold), var(--gold-light));
+  animation: fill-bar 2s ease forwards;
+}
+
+@keyframes fill-bar {
+  to {
+    width: 100%;
+  }
+}
+
+/* Top nav */
+.top-nav {
+  flex-shrink: 0;
+  background: rgba(26, 10, 46, 0.97);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--card-border);
+  padding: 0 14px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  z-index: 50;
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nav-logo {
+  width: 34px;
+  height: 34px;
+}
+
+.nav-name-block .nav-church {
+  font-family: var(--font-display);
+  font-size: 13px;
+  letter-spacing: 1.5px;
+  color: var(--gold-light);
+  line-height: 1.2;
+}
+
+.nav-name-block .nav-loc {
+  font-size: 9px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.notif-btn {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid rgba(201, 149, 42, 0.25);
+}
+
+.notif-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--gold);
+  color: var(--purple-deep);
+  font-size: 9px;
+  font-weight: 700;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.notif-badge.show {
+  display: flex;
+}
+
+.service-pill {
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: var(--gold);
+  border: 1px solid rgba(201, 149, 42, 0.4);
+  padding: 4px 10px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.pulse {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--gold);
+  animation: blink 1.4s infinite;
+}
+
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.2;
+  }
+}
+
+/* Content area */
+.content-wrap {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+.screen {
+  display: none;
+  padding: 12px 14px 100px;
+  animation: fade-up 0.35s ease;
+  background: var(--bg-main);
+  color: var(--white);
+  overflow-y: auto;
+}
+
+.screen.active {
+  display: block;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Bottom nav */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 430px;
+  background: rgba(15, 10, 26, 0.97);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid var(--card-border);
+  display: flex;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+  z-index: 100;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 2px 6px;
+  gap: 2px;
+  color: var(--text-muted);
+  transition: var(--transition);
+}
+
+.tab.active {
+  color: var(--gold-light);
+}
+
+.tab:hover {
+  color: var(--gold);
+}
+
+.tab-icon {
+  font-size: 18px;
+  line-height: 1;
+  transition: transform 0.2s;
+}
+
+.tab.active .tab-icon {
+  transform: translateY(-2px);
+}
+
+.tab-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.tab-notif {
+  position: absolute;
+  top: 8px;
+  right: calc(50% - 14px);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--gold);
+  display: none;
+}
+
+.tab-notif.show {
+  display: block;
+}
