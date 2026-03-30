@@ -1,0 +1,47 @@
+{
+  "version": 2,
+  "outputDirectory": ".",
+  "public": true,
+  "routes": [
+    {
+      "src": "/manifest.json",
+      "headers": {
+        "Content-Type": "application/manifest+json",
+        "Cache-Control": "public, max-age=86400",
+        "Access-Control-Allow-Origin": "*"
+      },
+      "dest": "/manifest.json"
+    },
+    {
+      "src": "/sw.js",
+      "headers": {
+        "Content-Type": "application/javascript",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Service-Worker-Allowed": "/"
+      },
+      "dest": "/sw.js"
+    },
+    { "src": "/church-building.jpg", "dest": "/church-building.jpg" },
+    { "src": "/pastor-photo.jpg",    "dest": "/pastor-photo.jpg" },
+    { "src": "/icon-72.png",         "dest": "/icon-72.png" },
+    { "src": "/icon-96.png",         "dest": "/icon-96.png" },
+    { "src": "/icon-128.png",        "dest": "/icon-128.png" },
+    { "src": "/icon-144.png",        "dest": "/icon-144.png" },
+    { "src": "/icon-152.png",        "dest": "/icon-152.png" },
+    { "src": "/icon-192.png",        "dest": "/icon-192.png" },
+    { "src": "/icon-384.png",        "dest": "/icon-384.png" },
+    { "src": "/icon-512.png",        "dest": "/icon-512.png" },
+    { "src": "/dcc-tests.html",      "dest": "/dcc-tests.html" },
+    { "src": "/(.*)",                "dest": "/index.html" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options",        "value": "SAMEORIGIN" },
+        { "key": "X-XSS-Protection",       "value": "1; mode=block" }
+      ]
+    }
+  ]
+}
