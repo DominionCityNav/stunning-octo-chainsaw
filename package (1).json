@@ -1,0 +1,17 @@
+{
+  "name": "dominion-city-church",
+  "version": "1.0.0",
+  "description": "Dominion City Church PWA — Navasota, TX",
+  "private": true,
+  "scripts": {
+    "dev": "serve .",
+    "build": "echo 'Static PWA — no build step required'",
+    "start": "serve ."
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "serve": "^14.0.0"
+  }
+}
