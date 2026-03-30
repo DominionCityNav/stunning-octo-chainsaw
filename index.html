@@ -1491,7 +1491,23 @@ select.form-input option{background:var(--purple-mid)}
         </div>
         <div class="cal-grid" id="cal-grid-2"></div>
       </div>
-      <div class="section-head"><div class="section-title">Upcoming Events</div></div>
+      <div class="section-head" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><div class="section-title">Upcoming Events</div><button class="btn-outline" style="font-size:11px;padding:6px 14px" onclick="toggleEventForm()">+ Add Event</button></div>
+      <div id="evt-create-form" style="display:none;margin-bottom:14px">
+        <div class="card">
+          <div class="card-title">📅 New Event</div>
+          <div id="evt-error" style="font-size:12px;color:#fca5a5;min-height:16px;margin-bottom:8px"></div>
+          <div class="form-group"><label class="form-label">Event Title *</label><input type="text" class="form-input" id="evt-title" placeholder="e.g., Youth Night, Bible Study"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div class="form-group"><label class="form-label">Date *</label><input type="date" class="form-input" id="evt-date"></div>
+            <div class="form-group"><label class="form-label">Time</label><input type="time" class="form-input" id="evt-time"></div>
+          </div>
+          <div class="form-group"><label class="form-label">Location</label><input type="text" class="form-input" id="evt-location" placeholder="625 Blackshear St, Fellowship Hall"></div>
+          <div class="form-group"><label class="form-label">Description</label><textarea class="form-input" id="evt-description" rows="2" placeholder="Brief details about the event..."></textarea></div>
+          <button class="btn-gold btn-full" id="evt-submit-btn" onclick="submitEvent()">Save Event ✦</button>
+          <div class="toast" id="evt-toast"></div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:8px">Admin events publish immediately. Ministry events require approval.</div>
+        </div>
+      </div>
       <div id="events-list-2">
         <div class="event-list-item">
           <div class="event-date-box"><div class="ev-month">SUN</div><div class="ev-day">29</div></div>
@@ -3026,40 +3042,20 @@ async function submitPost() {
 /* ═══════════════════════════════════════════════════
    CALENDAR
 ═══════════════════════════════════════════════════ */
-function buildCalendar() {
-  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  document.getElementById('cal-month-label').textContent = months[APP.calMonth] + ' ' + APP.calYear;
-  const grid = document.getElementById('cal-grid');
-  if (!grid) return;
-  grid.innerHTML = '';
-  ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach(d => {
-    const el = document.createElement('div');
-    el.className = 'cal-day-label';
-    el.textContent = d;
-    grid.appendChild(el);
-  });
-  const first = new Date(APP.calYear, APP.calMonth, 1).getDay();
-  const days = new Date(APP.calYear, APP.calMonth + 1, 0).getDate();
-  const today = new Date();
-  for (let i = 0; i < first; i++) {
-    const el = document.createElement('div');
-    el.className = 'cal-day other-month';
-    grid.appendChild(el);
-  }
-  for (let d = 1; d <= days; d++) {
-    const el = document.createElement('div');
-    el.className = 'cal-day';
-    el.textContent = d;
-    if (d % 7 === 1) el.classList.add('has-event'); // demo: Sundays have events
-    if (d === today.getDate() && APP.calMonth === today.getMonth() && APP.calYear === today.getFullYear()) el.classList.add('today');
-    el.onclick = () => showDayEvents(d);
-    grid.appendChild(el);
-  }
+async function fetchEventDatesForMonth(year, month) {
+  if (!db) return new Set();
+  try {
+    const startDate = `${year}-${String(month+1).padStart(2,'0')}-01`;
+    const endDay = new Date(year, month+1, 0).getDate();
+    const endDate = `${year}-${String(month+1).padStart(2,'0')}-${String(endDay).padStart(2,'0')}`;
+    const { data } = await db.from('events').select('event_date').eq('is_public', true).gte('event_date', startDate).lte('event_date', endDate);
+    if (!data) return new Set();
+    return new Set(data.map(e => e.event_date?.split('T')[0]));
+  } catch(e) { return new Set(); }
 }
-function buildCalendarInGrid(grid, year, month) {
+function renderCalendarGrid(grid, year, month, eventDates) {
   if (!grid) return;
   grid.innerHTML = '';
-  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach(d => {
     const el = document.createElement('div');
     el.className = 'cal-day-label';
@@ -3078,13 +3074,28 @@ function buildCalendarInGrid(grid, year, month) {
     const el = document.createElement('div');
     el.className = 'cal-day';
     el.textContent = d;
-    if (d % 7 === 1) el.classList.add('has-event');
+    const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isSunday = new Date(year, month, d).getDay() === 0;
+    if (isSunday || eventDates.has(dateStr)) el.classList.add('has-event');
     if (d === today.getDate() && month === today.getMonth() && year === today.getFullYear()) el.classList.add('today');
     el.onclick = () => showDayEvents(d);
     grid.appendChild(el);
   }
 }
-function calNav2(dir) {
+async function buildCalendar() {
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('cal-month-label').textContent = months[APP.calMonth] + ' ' + APP.calYear;
+  const grid = document.getElementById('cal-grid');
+  if (!grid) return;
+  const eventDates = await fetchEventDatesForMonth(APP.calYear, APP.calMonth);
+  renderCalendarGrid(grid, APP.calYear, APP.calMonth, eventDates);
+}
+async function buildCalendarInGrid(grid, year, month) {
+  if (!grid) return;
+  const eventDates = await fetchEventDatesForMonth(year, month);
+  renderCalendarGrid(grid, year, month, eventDates);
+}
+async function calNav2(dir) {
   if (APP.cal2Month == null) APP.cal2Month = APP.calMonth;
   if (APP.cal2Year == null) APP.cal2Year = APP.calYear;
   APP.cal2Month += dir;
@@ -3094,36 +3105,28 @@ function calNav2(dir) {
   const label2 = document.getElementById('cal-month-label-2');
   if (label2) label2.textContent = months[APP.cal2Month] + ' ' + APP.cal2Year;
   const grid2 = document.getElementById('cal-grid-2');
-  if (grid2) buildCalendarInGrid(grid2, APP.cal2Year, APP.cal2Month);
+  if (grid2) await buildCalendarInGrid(grid2, APP.cal2Year, APP.cal2Month);
 }
 
-function calNav(dir) {
+async function calNav(dir) {
   APP.calMonth += dir;
   if (APP.calMonth > 11) { APP.calMonth = 0; APP.calYear++; }
   if (APP.calMonth < 0) { APP.calMonth = 11; APP.calYear--; }
-  buildCalendar();
+  await buildCalendar();
 }
-function showDayEvents(d) {
+async function showDayEvents(d) {
   const existing = document.getElementById('day-events-popup');
   if (existing) existing.remove();
-  // Mark active
   document.querySelectorAll('.cal-day.selected').forEach(el => el.classList.remove('selected'));
   event?.target?.classList.add('selected');
-  // Build popup
-  const dateStr = new Date(APP.calYear, APP.calMonth, d)
-    .toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' });
-  const popup = document.createElement('div');
-  popup.id = 'day-events-popup';
-  popup.style.cssText = 'background:var(--bg-card);border:1px solid var(--card-border);border-radius:var(--radius-sm);padding:14px;margin-top:10px;animation:fadeUp 0.2s ease';
-  // Check if Sunday (has-event) — show service info
   const dateObj = new Date(APP.calYear, APP.calMonth, d);
+  const dateStr = dateObj.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' });
   const isSunday = dateObj.getDay() === 0;
-  popup.innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-      <div style="font-family:var(--font-display);font-size:13px;color:var(--gold-light)">${dateStr}</div>
-      <button onclick="document.getElementById('day-events-popup').remove()" style="background:none;border:none;color:var(--text-muted);font-size:16px;cursor:pointer">✕</button>
-    </div>
-    ${isSunday ? `
+  const isoDate = `${APP.calYear}-${String(APP.calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+
+  let eventsHtml = '';
+  if (isSunday) {
+    eventsHtml += `
       <div class="event-list-item" style="padding:10px 0;border-bottom:none">
         <div class="event-date-box" style="min-width:44px"><div class="ev-month">SUN</div><div class="ev-day">${d}</div></div>
         <div class="event-info">
@@ -3131,15 +3134,155 @@ function showDayEvents(d) {
           <div class="event-info-detail">9:00 AM · 625 Blackshear St · All welcome</div>
           <button class="remind-btn" onclick="setReminder(this,'Sunday Service')">🔔 Remind Me</button>
         </div>
-      </div>` : `<div style="font-size:13px;color:var(--text-muted);text-align:center;padding:10px 0">No events scheduled</div>`}
-  `;
-  // Insert after calendar card
+      </div>`;
+  }
+  if (db) {
+    try {
+      const { data } = await db.from('events').select('*').eq('is_public', true).gte('event_date', isoDate).lt('event_date', isoDate + 'T23:59:59');
+      if (data?.length) {
+        data.forEach(evt => {
+          const ed = new Date(evt.event_date);
+          const month = ed.toLocaleDateString('en-US',{month:'short'}).toUpperCase();
+          const time = evt.event_time || ed.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+          eventsHtml += `
+            <div class="event-list-item" style="padding:10px 0">
+              <div class="event-date-box" style="min-width:44px"><div class="ev-month">${month}</div><div class="ev-day">${ed.getDate()}</div></div>
+              <div class="event-info">
+                <div class="event-info-title">${escHtml(evt.title)}</div>
+                <div class="event-info-detail">${time}${evt.location ? ' · '+escHtml(evt.location) : ''}</div>
+                ${evt.description ? '<div class="event-info-detail">'+escHtml(evt.description)+'</div>' : ''}
+                <button class="remind-btn" onclick="setReminder(this,'${escHtml(evt.title)}')">🔔 Remind Me</button>
+              </div>
+            </div>`;
+        });
+      }
+    } catch(e) {}
+  }
+  if (!eventsHtml) eventsHtml = '<div style="font-size:13px;color:var(--text-muted);text-align:center;padding:10px 0">No events scheduled</div>';
+
+  const popup = document.createElement('div');
+  popup.id = 'day-events-popup';
+  popup.style.cssText = 'background:var(--bg-card);border:1px solid var(--card-border);border-radius:var(--radius-sm);padding:14px;margin-top:10px;animation:fadeUp 0.2s ease';
+  popup.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div style="font-family:var(--font-display);font-size:13px;color:var(--gold-light)">${dateStr}</div>
+      <button onclick="document.getElementById('day-events-popup').remove()" style="background:none;border:none;color:var(--text-muted);font-size:16px;cursor:pointer">✕</button>
+    </div>
+    ${eventsHtml}`;
   const calCard = document.getElementById('cal-grid')?.closest('.card');
   if (calCard) calCard.after(popup);
   else {
     const calCard2 = document.getElementById('cal-grid-2')?.closest('.card');
     if (calCard2) calCard2.after(popup);
   }
+}
+
+/* ═══════════════════════════════════════════════════
+   EVENT CREATION + APPROVAL
+═══════════════════════════════════════════════════ */
+function toggleEventForm() {
+  const form = document.getElementById('evt-create-form');
+  if (!form) return;
+  form.style.display = form.style.display === 'none' ? 'block' : 'none';
+  if (form.style.display === 'block') {
+    const dateInput = document.getElementById('evt-date');
+    if (dateInput && !dateInput.value) dateInput.value = new Date().toISOString().split('T')[0];
+  }
+}
+async function submitEvent() {
+  if (!db || !APP.member?.id) return;
+  const title = document.getElementById('evt-title')?.value.trim();
+  const date = document.getElementById('evt-date')?.value;
+  const time = document.getElementById('evt-time')?.value.trim();
+  const location = document.getElementById('evt-location')?.value.trim();
+  const description = document.getElementById('evt-description')?.value.trim();
+  const errorEl = document.getElementById('evt-error');
+  if (!title) { if (errorEl) errorEl.textContent = 'Event title is required.'; return; }
+  if (!date) { if (errorEl) errorEl.textContent = 'Event date is required.'; return; }
+  if (errorEl) errorEl.textContent = '';
+  const isAdmin = APP.member.is_admin || APP.member.status === 'leadership';
+  const btn = document.getElementById('evt-submit-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
+  try {
+    const { error } = await db.from('events').insert({
+      title,
+      event_date: date + (time ? 'T'+time+':00' : 'T00:00:00'),
+      event_time: time || null,
+      location: location || null,
+      description: description || null,
+      is_public: isAdmin,
+      created_by: APP.member.id
+    });
+    if (error) { if (errorEl) errorEl.textContent = 'Error: ' + error.message; return; }
+    document.getElementById('evt-title').value = '';
+    document.getElementById('evt-date').value = '';
+    document.getElementById('evt-time').value = '';
+    document.getElementById('evt-location').value = '';
+    document.getElementById('evt-description').value = '';
+    const toast = document.getElementById('evt-toast');
+    if (toast) {
+      toast.textContent = isAdmin ? '✅ Event published to the calendar!' : '✅ Event submitted for approval. Leadership will review it.';
+      toast.className = 'toast show';
+      setTimeout(() => toast.classList.remove('show'), 4000);
+    }
+    document.getElementById('evt-create-form').style.display = 'none';
+    auditLog('info', 'event_created', { title, date, is_public: isAdmin, created_by: APP.member.id });
+    if (isAdmin) { buildCalendar(); loadEvents(); }
+  } catch(e) {
+    if (errorEl) errorEl.textContent = 'Connection error. Try again.';
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Save Event ✦'; }
+  }
+}
+async function loadPendingEvents() {
+  if (!db) return;
+  const container = document.getElementById('pending-events-container');
+  const badge = document.getElementById('pending-events-badge');
+  if (!container) return;
+  try {
+    const { data, error } = await db.from('events').select('*, members(full_name)').eq('is_public', false).order('event_date', { ascending: true });
+    if (error || !data?.length) {
+      container.innerHTML = '<div style="font-size:13px;color:var(--text-muted)">No pending events ✓</div>';
+      if (badge) badge.style.display = 'none';
+      return;
+    }
+    if (badge) { badge.textContent = data.length; badge.style.display = 'inline'; }
+    container.innerHTML = data.map(evt => {
+      const d = new Date(evt.event_date);
+      const dateStr = d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+      const submitter = evt.members?.full_name || 'Unknown';
+      return `
+        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(201,149,42,0.2);border-radius:var(--radius-sm);padding:14px;margin-bottom:10px">
+          <div style="font-family:var(--font-display);font-size:15px;color:var(--white);margin-bottom:4px">${escHtml(evt.title)}</div>
+          <div style="font-size:12px;color:var(--gold);margin-bottom:4px">${dateStr}${evt.event_time ? ' · '+escHtml(evt.event_time) : ''}</div>
+          ${evt.location ? '<div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">📍 '+escHtml(evt.location)+'</div>' : ''}
+          ${evt.description ? '<div style="font-size:12px;color:rgba(255,255,255,0.7);margin-bottom:8px">'+escHtml(evt.description)+'</div>' : ''}
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px">Submitted by ${escHtml(submitter)}</div>
+          <div style="display:flex;gap:8px">
+            <button onclick="approveEvent('${evt.id}')" style="flex:1;background:var(--gold);color:var(--purple-deep);font-size:12px;font-weight:700;padding:8px;border-radius:8px;border:none;cursor:pointer">✓ Approve</button>
+            <button onclick="rejectEvent('${evt.id}')" style="flex:1;background:rgba(239,68,68,0.15);color:#fca5a5;font-size:12px;padding:8px;border-radius:8px;border:1px solid rgba(239,68,68,0.3);cursor:pointer">✕ Reject</button>
+          </div>
+        </div>`;
+    }).join('');
+  } catch(e) { auditLog('error','load_pending_events',{detail:String(e).substring(0,200)}); }
+}
+async function approveEvent(eventId) {
+  if (!db) return;
+  try {
+    await db.from('events').update({ is_public: true }).eq('id', eventId);
+    auditLog('info', 'event_approved', { event_id: eventId, approved_by: APP.member?.id });
+    loadPendingEvents();
+    buildCalendar(); loadEvents();
+  } catch(e) {}
+}
+async function rejectEvent(eventId) {
+  if (!db) return;
+  if (!confirm('Reject this event? It will be deleted.')) return;
+  try {
+    await db.from('events').delete().eq('id', eventId);
+    auditLog('info', 'event_rejected', { event_id: eventId, rejected_by: APP.member?.id });
+    loadPendingEvents();
+  } catch(e) {}
 }
 
 /* ═══════════════════════════════════════════════════
@@ -3765,6 +3908,7 @@ async function generateSermonTopics() {
 ─────────────────────────────────────────────────── */
 function openPastorDashboard() {
   loadPendingMembers();
+  loadPendingEvents();
   const member = APP.member;
   // Allow leadership status OR admin flag — Pastor Shan has is_admin=true
   if (!member) return;
@@ -3944,238 +4088,7 @@ function getMonday() {
   return new Date(d.setDate(diff)).toISOString().split('T')[0];
 }
 
-/* ═══════════════════════════════════════════════════
-   COMMUNITY FEED
-   Real photo/video uploads to Supabase storage.
-   Likes and comments wired to DB.
-═══════════════════════════════════════════════════ */
-let currentPostType = 'text';
-let selectedPhotoFile = null;
-
-function setPostType(type) {
-  currentPostType = type;
-  document.querySelectorAll('[id^="ctype-"]').forEach(b => b.classList.remove('active'));
-  document.getElementById('ctype-' + type + '-c')?.classList.add('active');
-  document.getElementById('photo-upload-area').style.display  = type === 'photo' ? 'block' : 'none';
-  document.getElementById('video-link-area').style.display    = type === 'video' ? 'block' : 'none';
-}
-
-function handlePhotoSelect(input) {
-  const file = input.files[0];
-  if (!file) return;
-  if (file.size > 5 * 1024 * 1024) {
-    alert('Photo must be under 5MB.'); input.value = ''; return;
-  }
-  selectedPhotoFile = file;
-  const reader = new FileReader();
-  reader.onload = e => {
-    document.getElementById('photo-preview-img').src = e.target.result;
-    document.getElementById('photo-preview-wrap').style.display = 'block';
-  };
-  reader.readAsDataURL(file);
-}
-
-function clearPhotoUpload() {
-  selectedPhotoFile = null;
-  document.getElementById('photo-file-input').value = '';
-  document.getElementById('photo-preview-wrap').style.display = 'none';
-  document.getElementById('photo-preview-img').src = '';
-}
-
-async function uploadPhotoToStorage(file) {
-  const ext  = file.name.split('.').pop() || 'jpg';
-  const path = `feed/${APP.member.id}/${Date.now()}.${ext}`;
-  const progress = document.getElementById('upload-progress-c');
-  const bar      = document.getElementById('upload-bar-c');
-  const status   = document.getElementById('upload-status-c');
-
-  progress.style.display = 'block';
-  bar.style.width = '30%';
-  status.textContent = 'Uploading photo...';
-
-  const { data, error } = await db.storage
-    .from('media')
-    .upload(path, file, { contentType: file.type, upsert: false });
-
-  if (error) {
-    progress.style.display = 'none';
-    throw new Error('Upload failed: ' + error.message);
-  }
-
-  bar.style.width = '100%';
-  status.textContent = 'Upload complete';
-  setTimeout(() => { progress.style.display = 'none'; bar.style.width = '0%'; }, 1000);
-
-  const { data: urlData } = db.storage.from('media').getPublicUrl(path);
-  return urlData.publicUrl;
-}
-
-function getVideoEmbed(url) {
-  if (!url) return null;
-  // YouTube
-  const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/);
-  if (ytMatch) return { type: 'youtube', id: ytMatch[1], thumb: `https://img.youtube.com/vi/${ytMatch[1]}/hqdefault.jpg` };
-  // Facebook
-  if (url.includes('facebook.com') || url.includes('fb.watch')) return { type: 'facebook', url };
-  return null;
-}
-
-async function submitCommunityPost() {
-  if (!APP.member?.id) { alert('Please log in to post.'); return; }
-
-  const btn     = document.getElementById('post-btn-c');
-  const text    = document.getElementById('compose-text-c').value.trim();
-  const vidLink = document.getElementById('video-link-input-c')?.value.trim();
-
-  if (!text && !selectedPhotoFile && !vidLink) {
-    alert('Write something, add a photo, or paste a video link.'); return;
-  }
-
-  btn.disabled = true; btn.textContent = 'Posting...';
-
-  try {
-    let mediaUrl  = null;
-    let videoLink = null;
-
-    if (currentPostType === 'photo' && selectedPhotoFile) {
-      mediaUrl = await uploadPhotoToStorage(selectedPhotoFile);
-    }
-    if (currentPostType === 'video' && vidLink) {
-      videoLink = vidLink;
-    }
-
-    const { data, error } = await db.from('feed_posts').insert({
-      member_id:  APP.member.id,
-      post_type:  currentPostType,
-      content:    text || null,
-      media_url:  mediaUrl,
-      video_link: videoLink,
-      like_count: 0,
-      comment_count: 0
-    }).select().single();
-
-    if (error) throw new Error(error.message);
-
-    // Clear form
-    document.getElementById('compose-text-c').value = '';
-    document.getElementById('video-link-input-c').value = '';
-    clearPhotoUpload();
-    setPostType('text');
-
-    // Show toast
-    const toast = document.getElementById('post-toast-c');
-    toast.textContent = '✅ Posted to the community!';
-    toast.className = 'toast show';
-    setTimeout(() => toast.classList.remove('show'), 3000);
-
-    // Prepend to feed
-    if (data) prependFeedPost(data, APP.member);
-
-    auditLog('info', 'community_post_created', { post_id: data?.id });
-
-  } catch(e) {
-    alert('Could not post: ' + e.message);
-  } finally {
-    btn.disabled = false; btn.textContent = 'Post to Community ✦';
-  }
-}
-
-function prependFeedPost(post, member) {
-  const container = document.getElementById('community-feed-container');
-  if (!container) return;
-  const el = document.createElement('div');
-  el.className = 'feed-post';
-  el.dataset.postId = post.id;
-  const initials = member?.initials || member?.full_name?.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase() || '??';
-  const name = member?.full_name || 'Member';
-  const photoHtml = member?.photo_url
-    ? `<img src="${member.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
-    : initials;
-  let mediaHtml = '';
-  if (post.media_url) {
-    mediaHtml = `<img src="${post.media_url}" class="feed-post-media" onerror="this.style.display='none'">`;
-  }
-  if (post.video_link) {
-    const embed = getVideoEmbed(post.video_link);
-    if (embed?.type === 'youtube') {
-      mediaHtml = `<a href="${post.video_link}" target="_blank" rel="noopener" style="display:block;position:relative">
-        <img src="${embed.thumb}" class="feed-post-media" style="opacity:0.85">
-        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
-          <div style="width:52px;height:52px;background:rgba(0,0,0,0.75);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px">▶️</div>
-        </div>
-      </a>`;
-    }
-  }
-  el.innerHTML = `
-    <div class="feed-post-header">
-      <div class="feed-avatar" style="overflow:hidden;padding:0">${photoHtml}</div>
-      <div><div class="feed-poster-name">${escHtml(name)}</div><div class="feed-post-time">Just now</div></div>
-    </div>
-    ${post.content ? `<div class="feed-post-content">${escHtml(post.content)}</div>` : ''}
-    ${mediaHtml}
-    <div class="feed-post-actions">
-      <button class="feed-action-btn" onclick="toggleLike(this,'${post.id}')">🤍 <span class="like-count">0</span></button>
-      <button class="feed-action-btn">💬 <span>0</span></button>
-      <button class="feed-action-btn" onclick="reportPost(this,'${post.id}')">⚑</button>
-    </div>`;
-  container.insertBefore(el, container.firstChild);
-}
-
-async function loadCommunityFeed() {
-  const container = document.getElementById('community-feed-container');
-  if (!container) return;
-
-  try {
-    const { data } = await db
-      .from('feed_posts')
-      .select('*, members(full_name, photo_url)')
-      .is('deleted_at', null)
-      .order('created_at', { ascending: false })
-      .limit(20);
-
-    if (!data?.length) return;
-
-    // Keep the seed post, add real posts at top
-    data.forEach(post => {
-      const existing = container.querySelector(`[data-post-id="${post.id}"]`);
-      if (existing) return;
-      prependFeedPost(post, post.members);
-    });
-  } catch(e) {
-    auditLog('warn', 'community_feed_load_failed', { detail: String(e).substring(0,200) });
-  }
-}
-
-async function toggleLike(btn, postId) {
-  const countEl = btn.querySelector('.like-count');
-  const liked = btn.dataset.liked === 'true';
-  if (liked) {
-    btn.textContent = '🤍 '; btn.dataset.liked = 'false';
-    btn.appendChild(countEl);
-    countEl.textContent = Math.max(0, parseInt(countEl.textContent) - 1);
-  } else {
-    btn.textContent = '❤️ '; btn.dataset.liked = 'true';
-    btn.appendChild(countEl);
-    countEl.textContent = parseInt(countEl.textContent) + 1;
-    if (postId && APP.member?.id) {
-      await db.from('feed_likes').insert({ post_id: postId, member_id: APP.member.id }).catch(()=>{});
-      await db.from('feed_posts').update({ like_count: parseInt(countEl.textContent) }).eq('id', postId).catch(()=>{});
-    }
-  }
-}
-
-async function reportPost(btn, postId) {
-  if (!postId) return;
-  if (!confirm('Report this post to leadership?')) return;
-  await db.from('feed_posts').update({ reported: true }).eq('id', postId).catch(()=>{});
-  btn.textContent = '⚑ Reported';
-  btn.disabled = true;
-}
-
-function escHtml(str) {
-  if (!str) return '';
-  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
+/* Duplicate community feed code removed — using the primary community section above */
 </script>
 
 <!-- ═══ PASTOR DASHBOARD PANEL ═══ -->
@@ -4242,6 +4155,11 @@ function escHtml(str) {
   <div style="font-family:var(--font-display);font-size:13px;letter-spacing:1px;color:var(--gold-light);margin-bottom:10px;display:flex;align-items:center;gap:8px"><span style="display:block;width:18px;height:2px;background:var(--gold);border-radius:2px"></span>Daily Scripture</div>
   <div style="margin-bottom:8px"><span id="scripture-gen-status" class="ai-status"></span></div>
   <button class="btn-outline" style="font-size:11px;padding:8px 18px;margin-bottom:30px" onclick="generateDailyScripture()">✦ Generate Next 30 Days of Scripture</button>
+
+  <!-- Pending Event Approvals -->
+  <div style="font-family:var(--font-display);font-size:13px;letter-spacing:1px;color:var(--gold-light);margin-bottom:10px;display:flex;align-items:center;gap:8px"><span style="display:block;width:18px;height:2px;background:var(--gold);border-radius:2px"></span>Pending Event Approvals <span id="pending-events-badge" style="background:var(--gold);color:var(--purple-deep);font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;display:none"></span></div>
+  <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px">Ministry-submitted events waiting for your approval.</div>
+  <div id="pending-events-container" style="margin-bottom:20px"><div style="font-size:13px;color:var(--text-muted)">Loading...</div></div>
 
   <!-- Pending Member Approvals -->
   <div style="font-family:var(--font-display);font-size:13px;letter-spacing:1px;color:var(--gold-light);margin-bottom:10px;display:flex;align-items:center;gap:8px"><span style="display:block;width:18px;height:2px;background:var(--gold);border-radius:2px"></span>Pending Approvals <span id="pending-badge" style="background:var(--gold);color:var(--purple-deep);font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;display:none"></span></div>
